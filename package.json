@@ -1,0 +1,42 @@
+{
+  "name": "no-bro",
+  "author": "Paul Lazunko",
+  "description": "Node.js message broker",
+  "keywords": [
+    "message broker",
+    "microservices",
+    "subscribers",
+    "publishers"
+  ],
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "tslint": "tslint src/**/*.ts{,x}"
+  },
+  "devDependencies": {
+    "@types/joi": "^14.3.4",
+    "@types/node": "^14.6.0",
+    "ts-node": "^5.0.0",
+    "tslint": "^5.9.1",
+    "tslint-config-airbnb": "^5.11.1",
+    "tslint-config-prettier": "^1.17.0",
+    "typescript": "^3.9.2"
+  },
+  "dependencies": {
+    "data-store": "^4.0.3",
+    "joi": "^17.2.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Paul-Lazunko/no-bro.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Paul-Lazunko/no-bro/issues"
+  },
+  "homepage": "https://github.com/Paul-Lazunko/no-bro#readme",
+
+}

@@ -1,0 +1,22 @@
+import {
+  DEFAULT_NO_BRO_SERVER_PORT,
+  DEFAULT_NO_BRO_WORKERS_COUNT,
+  DEFAULT_NO_BRO_STORE_RESPONSE_MS
+} from '../constants';
+
+const data: { [key: string]: string | number } = process.env;
+
+for ( const variable in data ) {
+  try {
+    if ( /^\d+$/.test( data[variable].toString() ) ) {
+      data[variable] = parseInt(data[variable].toString(), 10);
+    }
+  } catch(e) {}
+}
+
+export const config: any = {
+  port: process.env.NO_BRO_SERVER_PORT || DEFAULT_NO_BRO_SERVER_PORT,
+  workersCount: process.env.NO_BRO_WORKERS_COUNT || DEFAULT_NO_BRO_WORKERS_COUNT,
+  storeRequestValueMs: process.env.NO_BRO_STORE_RESPONSE_MS || DEFAULT_NO_BRO_STORE_RESPONSE_MS,
+  secretKey: process.env.NO_BRO_SECRET_KEY
+};
