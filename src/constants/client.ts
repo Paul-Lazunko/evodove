@@ -1,0 +1,3 @@
+export const DEFAULT_CLIENT_RECONNECT_INTERVAL: number = 1000;
+export const DEFAULT_CLIENT_REQUEST_TIMEOUT: number = 60000;
+export const DEFAULT_CLIENT_DO_RECONNECT_ON_CLOSE: boolean = true;

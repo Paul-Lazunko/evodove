@@ -18,6 +18,14 @@ export abstract class AbstractQueueHandler<T> {
     this.handler = handler;
   }
 
+  public getQueue(): T[] {
+    return this.queue;
+  }
+
+  public setQueue(queue: T[]) {
+    queue.forEach((message: T) => this.enQueue(message))
+  }
+
   public enQueue(item: T) {
     this.queue.push(item);
   }

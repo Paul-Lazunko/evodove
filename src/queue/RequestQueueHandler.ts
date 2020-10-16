@@ -38,4 +38,16 @@ export class RequestQueueHandler extends AbstractQueueHandler <IMessage> {
     super(options);
   }
 
+  public static getQueues(): IMessage[][] {
+    return RequestQueueHandler.instances.map((instance: RequestQueueHandler) => instance.getQueue());
+  }
+
+  public static setQueues (data: IMessage[][]) {
+    RequestQueueHandler.instances.forEach((instance: RequestQueueHandler, index: number) => {
+      if ( index < data.length - 1 ) {
+        instance.setQueue(data[index]);
+      }
+    });
+  }
+
 }

@@ -1,5 +1,5 @@
 import { IQueueHandlerOptions } from '../options';
-import { IMessage } from "../structures";
+import { IMessage } from '../structures';
 import { AbstractQueueHandler } from './AbstractQueueHandler';
 
 
@@ -34,6 +34,19 @@ export class ResponseQueueHandler extends AbstractQueueHandler <IMessage> {
     }
     return ResponseQueueHandler.instances[ResponseQueueHandler.instanceIndex];
   }
+
+  public static getQueues(): IMessage[][] {
+    return ResponseQueueHandler.instances.map((instance: ResponseQueueHandler) => instance.getQueue());
+  }
+
+  public static setQueues (data: IMessage[][]) {
+    ResponseQueueHandler.instances.forEach((instance: ResponseQueueHandler, index: number) => {
+      if ( index < data.length - 1 ) {
+        instance.setQueue(data[index]);
+      }
+    });
+  }
+
 
   protected constructor(options: IQueueHandlerOptions) {
     super(options);
