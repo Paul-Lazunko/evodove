@@ -1,5 +1,5 @@
 import * as joi from 'joi';
-import { ErrorFactory } from '../error';
+import { FError } from '../error';
 import { IClientOptions, IServerOptions } from '../options';
 import { IErrorFactory, IMessage } from '../structures';
 import {
@@ -18,7 +18,7 @@ export class Validator {
     const validationResult: any = schema.validate(data, { allowUnknown: false, convert: true });
     if ( validationResult && validationResult.error ) {
       // @ts-ignore
-      throw ErrorFactory[error](validationResult.error.message)
+      throw FError[error](validationResult.error.message)
     }
   }
 

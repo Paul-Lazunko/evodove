@@ -8,7 +8,7 @@ import {
   STORE_STORAGE_ROOT_KEY
 } from '../constants';
 import { IMessage } from '../structures';
-import { ErrorFactory } from '../error';
+import { FError } from '../error';
 import { RequestQueueHandler, ResponseQueueHandler } from '../queue';
 import { NoBroServer } from '../server';
 import {
@@ -132,7 +132,7 @@ export class NoBro {
       switch(type) {
         case ERequestType.REQUEST:
           if ( !sockets || !sockets.length ) {
-            throw ErrorFactory.subscriberExistenceError(channel);
+            throw FError.subscriberExistenceError(channel);
           }
           const index: number = Math.round(Math.random() * (sockets.length - 1));
           const socket = sockets [ index ];
@@ -147,7 +147,7 @@ export class NoBro {
           break;
         case ERequestType.PUBLISH:
           if ( !sockets || !sockets.length ) {
-           throw ErrorFactory.subscriberExistenceError(channel);
+           throw FError.subscriberExistenceError(channel);
           }
           if ( options.type === EMessageType.BROADCAST ) {
             this.server.makeRequest(sockets, message);
@@ -194,7 +194,7 @@ export class NoBro {
           this.enQueueResponse(message);
           break;
         default:
-          throw ErrorFactory.messageTypeError(type);
+          throw FError.messageTypeError(type);
       }
     } catch(e) {
       message.state.status = EMessageStatus.DECLINED;

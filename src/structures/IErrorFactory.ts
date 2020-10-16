@@ -1,5 +1,5 @@
-import { ErrorFactory } from '../error';
+import { FError } from '../error';
 
-export interface IErrorFactory extends Pick<ErrorFactory, keyof ErrorFactory> {
+export interface IErrorFactory extends Pick<FError, keyof FError> {
 
 }

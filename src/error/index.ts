@@ -1,2 +1,2 @@
-export * from './ErrorFactory';
+export * from './FError';
 
