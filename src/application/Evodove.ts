@@ -147,7 +147,14 @@ export class Evodove {
           break;
         case ERequestType.PUBLISH:
           if ( !sockets || !sockets.length ) {
-           throw FError.subscriberExistenceError(channel);
+           if ( options.waitSubscribers ) {
+             const ttl = options.ttl || 0;
+             if ( message.state.receivedAt + ttl > timestamp ) {
+               this.enQueueRequest(message);
+             }
+           } else {
+             throw FError.subscriberExistenceError(channel);
+           }
           }
           if ( options.type === EPublishType.BROADCAST ) {
             this.server.makeRequest(sockets, message);
