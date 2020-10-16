@@ -1,4 +1,4 @@
-import { DEFAULT_REQUEST_ID_LENGTH, EPublishType, ERequestType } from "../constants";
+import { DEFAULT_REQUEST_ID_LENGTH, EPublishType, ERequestType } from '../constants';
 
 const joi = require('joi');
 

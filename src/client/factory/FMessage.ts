@@ -1,4 +1,4 @@
-import { DEFAULT_REQUEST_ID_LENGTH } from "../../constants";
+import { DEFAULT_REQUEST_ID_LENGTH } from '../../constants';
 import { randomStringGenerator } from '../../helpers';
 import { IFMessageConstructParams } from '../../params';
 import { IMessage } from '../../structures';

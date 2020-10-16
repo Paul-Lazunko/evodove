@@ -6,7 +6,7 @@ import {
 } from '../constants';
 import { IClientOptions } from '../options';
 import { IMessage, IMessageOptions } from '../structures';
-import { Validator } from "../validator";
+import { Validator } from '../validator';
 import { Connection } from './connection';
 import { FMessage } from './factory';
 

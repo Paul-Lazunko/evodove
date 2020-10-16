@@ -14,7 +14,7 @@ import { NoBroServer } from '../server';
 import {
   addStoreHandler
 } from '../eventEmmitter';
-import { store } from "../store";
+import { store } from '../store';
 import { Validator } from '../validator';
 
 export class NoBro {
