@@ -39,7 +39,7 @@ You can use next environment variables:
 - EVODOVE_WORKERS_COUNT - concurrent queues count (default is 10)
 - EVODOVE_STORE_RESPONSE_MS - value in ms that indicates maximum time value to store responses from subscribers when publisher that created request is currently unavailable
 - EVODOVE_DATA_VOLUME - directory to store Message Broker instance state (when it will be restarted it can continue works with previously received messages)
-- EVODOVE_SECRET_KEY - secret key that will be used to encrypt frames, the same should be used at each client side
+- EVODOVE_SECURE_KEY - secret key that will be used to encrypt frames, the same should be used at each client side
 
 You can use Docker image with evodove instance like there:
 https://github.com/Paul-Lazunko/evodove-docker-example
