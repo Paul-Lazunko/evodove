@@ -1,7 +1,6 @@
-# node-bro
+# evodove
 
-node-bro is acronym constructed from **Node**.js and Message **Bro**ker.
-It provides next advantages to Your project/system:
+Evodove is a Message Broker for Node.js applications. It provides next advantages to Your projects:
 - security - clients and server interact with encrypted frames without keys sharing
 - fast - message delivering takes few ms with delivering guarantee
 - resistant - server/clients are resistant to crashes and loosing connection
@@ -11,7 +10,7 @@ It provides next advantages to Your project/system:
 
 ```shell script
 
-npm i -s node-bro
+npm i -s evodove
 
 ```
 
@@ -20,37 +19,39 @@ npm i -s node-bro
 server.js example
 ```ecmascript 6
 
-import { noBro } from 'node-bro';
+import { evodove } from 'evodove';
 
-noBro.start();
+const evodove = new Evodove();
+
+evodove.start();
 
 ```
 Run server with environment variables:
 
 ```shell script
 
-NO_BRO_SERVER_PORT=45678 NO_BRO_WORKERS_COUNT=10 NO_BRO_SECRET_KEY='mySecureKey' node server.js
+EVODOVE_SERVER_PORT=45678 EVODOVE_WORKERS_COUNT=10 EVODOVE_SECURE_KEY='mySecureKey' node server.js
 
 ```
 
 You can use next environment variables:
-- NO_BRO_SERVER_PORT - port that will be listened by Your Message Broker instance (default is 45678);
-- NO_BRO_WORKERS_COUNT - concurrent queues count (default is 10)
-- NO_BRO_STORE_RESPONSE_MS - value in ms that indicates maximum time value to store responses from subscribers when publisher that created request is currently unavailable
-- NO_BRO_DATA_VOLUME - directory to store Message Broker instance state (when it will be restarted it can continue works with previously received messages)
-- NO_BRO_SECRET_KEY - secret key that will be used to encrypt frames, the same should be used at each client side
+- EVODOVE_SERVER_PORT - port that will be listened by Your Message Broker instance (default is 45678);
+- EVODOVE_WORKERS_COUNT - concurrent queues count (default is 10)
+- EVODOVE_STORE_RESPONSE_MS - value in ms that indicates maximum time value to store responses from subscribers when publisher that created request is currently unavailable
+- EVODOVE_DATA_VOLUME - directory to store Message Broker instance state (when it will be restarted it can continue works with previously received messages)
+- EVODOVE_SECRET_KEY - secret key that will be used to encrypt frames, the same should be used at each client side
 
-You can use Docker image with node-bro instance like there:
-https://github.com/Paul-Lazunko/node-bro-docker-example
+You can use Docker image with evodove instance like there:
+https://github.com/Paul-Lazunko/evodove-docker-example
 
 ###### Create subscriber
 
 subscriber.js example
 
 ```ecmascript 6
-import { NoBroClient } from 'node-bro';
+import { EvodoveClient } from 'evodove';
 
-const subscriber = new NoBroClient({
+const subscriber = new EvodoveClient({
   host: 'localhost',
   port: 45678,
   secureKey: 'mySecureKey',
@@ -75,9 +76,9 @@ subscriber.connect().catch(console.log);
 publisher.js example
 
 ```ecmascript 6
-import { NoBroClient } from 'node-bro';
+import { EvodoveClient } from 'evodove';
 
-const publisher = new NoBroClient({
+const publisher = new EvodoveClient({
   host: 'localhost',
   port: 45678,
   secureKey: 'mySecureKey',

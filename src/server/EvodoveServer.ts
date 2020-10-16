@@ -5,7 +5,7 @@ import { CryptoHelper, randomStringGenerator } from '../helpers';
 import { IServerOptions } from '../options';
 import { IMessage } from '../structures';
 
-export class NoBroServer {
+export class EvodoveServer {
   private server: Server;
   private readonly port: number;
   private sockets: Map <string, Socket>;

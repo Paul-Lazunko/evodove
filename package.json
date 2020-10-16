@@ -1,5 +1,5 @@
 {
-  "name": "node-bro",
+  "name": "evodove",
   "version": "1.0.0",
   "author": "Paul Lazunko",
   "description": "Node.js message broker",
@@ -28,14 +28,15 @@
   },
   "dependencies": {
     "data-store": "^4.0.3",
+    "esm": "^3.2.25",
     "joi": "^17.2.1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Paul-Lazunko/node-bro.git"
+    "url": "git+https://github.com/Paul-Lazunko/evodove.git"
   },
   "bugs": {
-    "url": "https://github.com/Paul-Lazunko/node-bro/issues"
+    "url": "https://github.com/Paul-Lazunko/evodove/issues"
   },
-  "homepage": "https://github.com/Paul-Lazunko/node-bro#readme"
+  "homepage": "https://github.com/Paul-Lazunko/evodove#readme"
 }

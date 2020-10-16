@@ -1,5 +1,5 @@
-import { NoBro } from '../application';
+import { Evodove } from '../application';
 
 export interface IRequestControllerOptions {
-  noBro: NoBro
+  noBro: Evodove
 }

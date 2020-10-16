@@ -10,7 +10,7 @@ import { Validator } from '../validator';
 import { Connection } from './connection';
 import { FMessage } from './factory';
 
-export class NoBroClient {
+export class EvodoveClient {
   private options: IClientOptions;
   private connection: Connection;
   private subscribers: Map<string, (inputParams: any) => any>;

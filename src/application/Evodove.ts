@@ -10,19 +10,19 @@ import {
 import { IMessage } from '../structures';
 import { FError } from '../error';
 import { RequestQueueHandler, ResponseQueueHandler } from '../queue';
-import { NoBroServer } from '../server';
+import { EvodoveServer } from '../server';
 import {
   addStoreHandler
 } from '../eventEmmitter';
 import { store } from '../store';
 import { Validator } from '../validator';
 
-export class NoBro {
+export class Evodove {
   public consumers: Map<string, string[]>;
   public lostProducersTimeouts: Map<string, number>;
   public lostProducers: Map<string, string>;
   public messageBuffer: Map<string, IMessage>;
-  protected server: NoBroServer;
+  protected server: EvodoveServer;
 
   constructor() {
     this.validateConfiguration();
@@ -30,7 +30,7 @@ export class NoBro {
     this.lostProducers = new Map<string, string>();
     this.lostProducersTimeouts = new Map<string, number>();
     this.messageBuffer = new Map<string, IMessage>();
-    this.server = new NoBroServer({
+    this.server = new EvodoveServer({
       port: config.port,
       requestHandler: this.enQueueRequest.bind(this),
       disconnectHandler: this.deleteConsumer.bind(this)
@@ -265,5 +265,3 @@ export class NoBro {
     }
   }
 }
-
-export const noBro = new NoBro();
