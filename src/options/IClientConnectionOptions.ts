@@ -1,5 +1,5 @@
-import { IClientOptions } from "./IClientOptions";
+import { IClientOptions } from './IClientOptions';
 
 export interface IClientConnectionOptions extends IClientOptions {
-  subscribers: Map<string, (outputParams: any) => any >
+  subscribers: Map<string, (inputParams: any) => any >
 }

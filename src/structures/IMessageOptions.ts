@@ -1,4 +1,4 @@
-import { EMessageType } from "../constants";
+import { EMessageType } from '../constants';
 
 export interface IMessageOptions {
   ttl?: number,

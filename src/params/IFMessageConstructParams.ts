@@ -1,5 +1,5 @@
-import { ERequestType } from "../constants";
-import { IMessageOptions, IMessageRouting } from "../structures";
+import { ERequestType } from '../constants';
+import { IMessageOptions, IMessageRouting } from '../structures';
 
 export interface IFMessageConstructParams {
   channel?: string,
