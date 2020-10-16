@@ -1,5 +1,5 @@
 {
-  "name": "no-bro",
+  "name": "@pashaman/no-bro",
   "version": "1.0.0",
   "author": "Paul Lazunko",
   "description": "Node.js message broker",

@@ -20,7 +20,7 @@ npm i -s no-bro
 server.js example
 ```ecmascript 6
 
-import { noBro } from 'no-bro';
+import { noBro } from '@pashaman/no-bro';
 
 noBro.start();
 
@@ -48,7 +48,7 @@ https://github.com/Paul-Lazunko/no-bro-docker-example
 subscriber.js example
 
 ```ecmascript 6
-import { NoBroClient } from 'no-bro';
+import { NoBroClient } from '@pashaman/no-bro';
 
 const subscriber = new NoBroClient({
   host: 'localhost',
@@ -75,6 +75,8 @@ subscriber.connect().catch(console.log);
 publisher.js example
 
 ```ecmascript 6
+import { NoBroClient } from '@pashaman/no-bro';
+
 const publisher = new NoBroClient({
   host: 'localhost',
   port: 45678,
