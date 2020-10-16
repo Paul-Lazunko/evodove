@@ -1,5 +1,5 @@
 {
-  "name": "@pashaman/no-bro",
+  "name": "node-bro",
   "version": "1.0.0",
   "author": "Paul Lazunko",
   "description": "Node.js message broker",
@@ -32,10 +32,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Paul-Lazunko/no-bro.git"
+    "url": "git+https://github.com/Paul-Lazunko/node-bro.git"
   },
   "bugs": {
-    "url": "https://github.com/Paul-Lazunko/no-bro/issues"
+    "url": "https://github.com/Paul-Lazunko/node-bro/issues"
   },
-  "homepage": "https://github.com/Paul-Lazunko/no-bro#readme"
+  "homepage": "https://github.com/Paul-Lazunko/node-bro#readme"
 }

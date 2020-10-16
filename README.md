@@ -1,6 +1,6 @@
-# no-bro
+# node-bro
 
-no-bro is acronym constructed from **No**de.js and Message **Bro**ker.
+node-bro is acronym constructed from **Node**.js and Message **Bro**ker.
 It provides next advantages to Your project/system:
 - security - clients and server interact with encrypted frames without keys sharing
 - fast - message delivering takes few ms with delivering guarantee
@@ -11,7 +11,7 @@ It provides next advantages to Your project/system:
 
 ```shell script
 
-npm i -s @pashaman/no-bro
+npm i -s node-bro
 
 ```
 
@@ -20,7 +20,7 @@ npm i -s @pashaman/no-bro
 server.js example
 ```ecmascript 6
 
-import { noBro } from '@pashaman/no-bro';
+import { noBro } from 'node-bro';
 
 noBro.start();
 
@@ -40,15 +40,15 @@ You can use next environment variables:
 - NO_BRO_DATA_VOLUME - directory to store Message Broker instance state (when it will be restarted it can continue works with previously received messages)
 - NO_BRO_SECRET_KEY - secret key that will be used to encrypt frames, the same should be used at each client side
 
-You can use Docker image with no-bro instance like there:
-https://github.com/Paul-Lazunko/no-bro-docker-example
+You can use Docker image with node-bro instance like there:
+https://github.com/Paul-Lazunko/node-bro-docker-example
 
 ###### Create subscriber
 
 subscriber.js example
 
 ```ecmascript 6
-import { NoBroClient } from '@pashaman/no-bro';
+import { NoBroClient } from 'node-bro';
 
 const subscriber = new NoBroClient({
   host: 'localhost',
@@ -75,7 +75,7 @@ subscriber.connect().catch(console.log);
 publisher.js example
 
 ```ecmascript 6
-import { NoBroClient } from '@pashaman/no-bro';
+import { NoBroClient } from 'node-bro';
 
 const publisher = new NoBroClient({
   host: 'localhost',
