@@ -1,11 +1,11 @@
-import { DEFAULT_REQUEST_ID_LENGTH, EMessageType, ERequestType } from "../constants";
+import { DEFAULT_REQUEST_ID_LENGTH, EPublishType, ERequestType } from "../constants";
 
 const joi = require('joi');
 
 const channel = joi.string().required();
 const inputParams = joi.any();
 const messageOptions = joi.object({
-  type: joi.string().valid(...Object.values(EMessageType)),
+  type: joi.string().valid(...Object.values(EPublishType)),
   ttl: joi.number().positive().integer().min(1000)
 });
 const handler = joi.function().required();

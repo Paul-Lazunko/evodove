@@ -1,7 +1,7 @@
 import {
   DEFAULT_CLIENT_DO_RECONNECT_ON_CLOSE,
   DEFAULT_CLIENT_RECONNECT_INTERVAL, DEFAULT_CLIENT_REQUEST_TIMEOUT,
-  EMessageType,
+  EPublishType,
   ERequestType
 } from '../constants';
 import { IClientOptions } from '../options';
@@ -48,7 +48,7 @@ export class NoBroClient {
   public publish(channel: string, inputParams: any, options?: IMessageOptions): Promise<any> {
     Validator.validateChannel(channel);
     Validator.validateInputParams(inputParams);
-    options = options || { type:  EMessageType.DIRECT };
+    options = options || { type:  EPublishType.DIRECT };
     Validator.validateMessageOptions(options);
     const message: IMessage = FMessage.construct({
       channel,

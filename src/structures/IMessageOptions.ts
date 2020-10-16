@@ -1,6 +1,7 @@
-import { EMessageType } from '../constants';
+import { EPublishType } from '../constants';
 
 export interface IMessageOptions {
   ttl?: number,
-  type?: EMessageType
+  type?: EPublishType,
+  waitSubscribers?: boolean
 }

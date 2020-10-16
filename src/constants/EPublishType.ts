@@ -1,4 +1,4 @@
-export enum EMessageType {
+export enum EPublishType {
   DIRECT = 'direct',
   BROADCAST = 'broadcast'
 }

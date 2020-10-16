@@ -1,7 +1,7 @@
 import { config } from '../config';
 import {
   EMessageStatus,
-  EMessageType,
+  EPublishType,
   ERequestType,
   STORE_MESSAGE_BUFFER_KEY, STORE_REQUEST_QUEUES_KEY, STORE_RESPONSE_QUEUES_KEY,
   STORE_ROOT_KEY,
@@ -149,7 +149,7 @@ export class NoBro {
           if ( !sockets || !sockets.length ) {
            throw FError.subscriberExistenceError(channel);
           }
-          if ( options.type === EMessageType.BROADCAST ) {
+          if ( options.type === EPublishType.BROADCAST ) {
             this.server.makeRequest(sockets, message);
             message.type = ERequestType.RESPONSE;
             message.state.enqueuedAt = timestamp;
