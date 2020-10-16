@@ -19,7 +19,7 @@ npm i -s evodove
 server.js example
 ```ecmascript 6
 
-import { evodove } from 'evodove';
+import { Evodove } from 'evodove';
 
 const evodove = new Evodove();
 
