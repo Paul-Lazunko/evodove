@@ -1,5 +1,6 @@
 {
   "name": "no-bro",
+  "version": "1.0.0",
   "author": "Paul Lazunko",
   "description": "Node.js message broker",
   "keywords": [
@@ -9,7 +10,6 @@
     "publishers"
   ],
   "license": "MIT",
-  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -37,6 +37,5 @@
   "bugs": {
     "url": "https://github.com/Paul-Lazunko/no-bro/issues"
   },
-  "homepage": "https://github.com/Paul-Lazunko/no-bro#readme",
-
+  "homepage": "https://github.com/Paul-Lazunko/no-bro#readme"
 }
