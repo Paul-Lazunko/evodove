@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "data-store": "^4.0.3",
-    "esm": "^3.2.25",
     "joi": "^17.2.1"
   },
   "repository": {
