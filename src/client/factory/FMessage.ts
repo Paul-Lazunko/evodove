@@ -1,6 +1,7 @@
-import { randomStringGenerator } from "../../helpers";
-import { IFMessageConstructParams } from "../../params";
-import { IMessage } from "../../structures";
+import { DEFAULT_REQUEST_ID_LENGTH } from "../../constants";
+import { randomStringGenerator } from '../../helpers';
+import { IFMessageConstructParams } from '../../params';
+import { IMessage } from '../../structures';
 
 export class FMessage {
   static construct(params: IFMessageConstructParams): IMessage {
@@ -13,7 +14,7 @@ export class FMessage {
       options,
       inputParams
     } = params;
-    const id: string = randomStringGenerator(32, true);
+    const id: string = randomStringGenerator(DEFAULT_REQUEST_ID_LENGTH, true);
     routing = routing || {};
     routing.id = id;
     routing.channel = channel;
