@@ -11,7 +11,7 @@ It provides next advantages to Your project/system:
 
 ```shell script
 
-npm i -s no-bro
+npm i -s @pashaman/no-bro
 
 ```
 
