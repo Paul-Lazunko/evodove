@@ -1,6 +1,6 @@
 import { createServer, Server, Socket } from 'net';
 import { config } from '../config';
-import { EMessageStatus, ERequestType } from "../constants";
+import { EMessageStatus, ERequestType } from '../constants';
 import { CryptoHelper, randomStringGenerator } from '../helpers';
 import { IServerOptions } from '../options';
 import { IMessage } from '../structures';
@@ -41,7 +41,7 @@ export class NoBroServer {
   onConnection(socket: Socket) {
     const id: string = randomStringGenerator(27, true);
     let savedPreviousStringData = '';
-    let isCorrectSecretKey: boolean = false;
+    let isCorrectSecureKey: boolean = false;
     this.sockets.set(id, socket);
     socket.addListener('data', (data: string) => {
       const dataString: string = data.toString();
@@ -50,23 +50,22 @@ export class NoBroServer {
         try {
           const decryptedData: string =
             savedPreviousStringData.length ?
-                CryptoHelper.decrypt(config.secretKey, savedPreviousStringData + dataStringSplit[i])
-              : CryptoHelper.decrypt(config.secretKey, dataStringSplit[i]);
+                CryptoHelper.decrypt(config.secureKey, savedPreviousStringData + dataStringSplit[i])
+              : CryptoHelper.decrypt(config.secureKey, dataStringSplit[i]);
           const message: IMessage = JSON.parse(decryptedData);
-
-          isCorrectSecretKey = true;
+          isCorrectSecureKey = true;
           message.routing.producerId = id;
           message.state = message.state || { status: EMessageStatus.ACCEPTED, receivedAt: new Date().getTime()};
           savedPreviousStringData = '';
           this.requestHandler(message);
         } catch(e) {
-          if ( isCorrectSecretKey ) {
+          if ( isCorrectSecureKey ) {
             savedPreviousStringData += dataStringSplit[i]
           } else {
             if ( this.sockets.has(id)) {
               this.sockets.delete(id);
             }
-            socket.end();
+            socket.destroy();
           }
         }
       }
@@ -89,7 +88,7 @@ export class NoBroServer {
     const { producerId } = message.routing;
     const _socket: Socket = this.sockets.get(producerId);
     if ( _socket ) {
-      const _response: string = CryptoHelper.encrypt(config.secretKey, JSON.stringify(message));
+      const _response: string = CryptoHelper.encrypt(config.secureKey, JSON.stringify(message));
       try {
         _socket.write(_response + '\n');
         return true;
@@ -105,7 +104,7 @@ export class NoBroServer {
   }
 
   public makeRequest(sockets: string[], message: IMessage, errorCallback?: (message: IMessage) => void) {
-    const request: string = CryptoHelper.encrypt(config.secretKey, JSON.stringify(message));
+    const request: string = CryptoHelper.encrypt(config.secureKey, JSON.stringify(message));
     sockets.forEach((socket: string) => {
       const _socket: Socket = this.sockets.get(socket);
       if ( _socket ) {
