@@ -203,7 +203,7 @@ export class Connection {
 
   private write(message: IMessage):void {
     const data: string = CryptoHelper.encrypt(this.options.secureKey, JSON.stringify(message));
-    this.socket.write(data + '\n');
+    this.socket.push(data + '\n');
   }
 
 }
