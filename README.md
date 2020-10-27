@@ -76,7 +76,7 @@ subscriber.connect().catch(console.log);
 publisher.js example
 
 ```ecmascript 6
-import { EvodoveClient } from 'evodove';
+import { EvodoveClient, EPublishType } from 'evodove';
 
 const publisher = new EvodoveClient({
   host: 'localhost',
