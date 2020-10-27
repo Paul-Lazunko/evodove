@@ -112,16 +112,16 @@ export class Connection {
         const handler = this.options.subscribers.get(routing.channel);
 
         this.rawDataString = '';
+
+        const hasError: boolean = state.hasOwnProperty('error');
+        if ( hasError ) {
+          this.eventEmitter.emit(`error-${routing.id}`, state.error);
+        } else {
+          this.eventEmitter.emit(`response-${routing.id}`, message);
+        }
+
         switch ( type ) {
-          case ERequestType.RESPONSE:
-          case ERequestType.SUBSCRIBE:
-          case ERequestType.SETUP:
-            const hasError: boolean = state.hasOwnProperty('error');
-            if ( hasError ) {
-              this.eventEmitter.emit(`error-${routing.id}`, state.error);
-            } else {
-              this.eventEmitter.emit(`response-${routing.id}`, message);
-            }
+          case ERequestType.ACCEPT:
             this.publisherId = routing.publisherId;
             break;
           case ERequestType.REQUEST:
@@ -160,28 +160,24 @@ export class Connection {
   public send(message: IMessage): Promise<IMessage> {
     const { routing } = message;
     return new Promise((resolve, reject) => {
-      if ( ![ ERequestType.RESPONSE, ERequestType.SETUP, ERequestType.SUBSCRIBE ].includes(message.type) ) {
-        this.timeouts.set(routing.id, setTimeout(() => {
-          reject(new Error(`Request timeout ${this.options.requestTimeout}ms exceeded`));
-          this.eventEmitter.removeAllListeners(`response-${routing.id}`);
-        }, this.options.requestTimeout));
-        this.eventEmitter.addListener(`response-${routing.id}`, (message: IMessage) => {
-          clearTimeout(this.timeouts.get(routing.id));
-          this.timeouts.delete(routing.id);
-          this.eventEmitter.removeAllListeners(`response-${routing.id}`);
-          this.eventEmitter.removeAllListeners(`error-${routing.id}`);
-          resolve(message.outputParams);
-        });
-        this.eventEmitter.addListener(`error-${routing.id}`, (error: string) => {
-          clearTimeout(this.timeouts.get(routing.id));
-          this.timeouts.delete(routing.id);
-          this.eventEmitter.removeAllListeners(`response-${routing.id}`);
-          this.eventEmitter.removeAllListeners(`error-${routing.id}`);
-          return reject(new Error(error));
-        });
-      } else {
-        resolve();
-      }
+      this.timeouts.set(routing.id, setTimeout(() => {
+        reject(new Error(`Request timeout ${this.options.requestTimeout}ms exceeded`));
+        this.eventEmitter.removeAllListeners(`response-${routing.id}`);
+      }, this.options.requestTimeout));
+      this.eventEmitter.addListener(`response-${routing.id}`, (message: IMessage) => {
+        clearTimeout(this.timeouts.get(routing.id));
+        this.timeouts.delete(routing.id);
+        this.eventEmitter.removeAllListeners(`response-${routing.id}`);
+        this.eventEmitter.removeAllListeners(`error-${routing.id}`);
+        resolve(message.outputParams);
+      });
+      this.eventEmitter.addListener(`error-${routing.id}`, (error: string) => {
+        clearTimeout(this.timeouts.get(routing.id));
+        this.timeouts.delete(routing.id);
+        this.eventEmitter.removeAllListeners(`response-${routing.id}`);
+        this.eventEmitter.removeAllListeners(`error-${routing.id}`);
+        return reject(new Error(error));
+      });
       if ( this.isConnected && !this.socket.destroyed ) {
         this.write(message);
       } else {

@@ -116,6 +116,15 @@ export class Evodove {
     this.responseQueueHandler.enQueue(message)
   }
 
+  protected sendAck(message: IMessage) {
+    const timestamp: number = new Date().getTime();
+    message.state.enqueuedAt = timestamp;
+    message.state.deliveredAt = timestamp;
+    message.state.handledAt = timestamp;
+    message.type = ERequestType.ACCEPT;
+    this.enQueueResponse(message);
+  }
+
   protected processMessage(message: IMessage): void {
     const {
       type,
@@ -136,7 +145,7 @@ export class Evodove {
           }
           const index: number = Math.round(Math.random() * (sockets.length - 1));
           const socket = sockets [ index ];
-          message.routing.consumerId = socket;
+          message.routing.subscriberId = socket;
           message.state.enqueuedAt = timestamp;
           this.messageBuffer.set(id, message);
           this.server.makeRequest(
@@ -158,11 +167,6 @@ export class Evodove {
           }
           if ( options.type === EPublishType.BROADCAST ) {
             this.server.makeRequest(sockets, message);
-            message.type = ERequestType.RESPONSE;
-            message.state.enqueuedAt = timestamp;
-            message.state.deliveredAt = timestamp;
-            message.state.handledAt = timestamp;
-            this.enQueueResponse(message);
           } else {
             message.state.enqueuedAt = timestamp;
             this.messageBuffer.set(id, message);
@@ -174,6 +178,7 @@ export class Evodove {
               this.enQueueRequest.bind(this)
             );
           }
+          this.sendAck(message);
           break;
         case ERequestType.RESPONSE:
           const storedMessage: IMessage = this.messageBuffer.get(id);
@@ -183,22 +188,17 @@ export class Evodove {
           storedMessage.state.handledAt = state.handledAt;
           this.enQueueResponse(Object.assign({}, storedMessage));
           this.messageBuffer.delete(id);
+          this.sendAck(message);
           break;
         case ERequestType.SUBSCRIBE:
           this.setSubscriber(channel, publisherId);
-          message.state.enqueuedAt = timestamp;
-          message.state.deliveredAt = timestamp;
-          message.state.handledAt = timestamp;
-          this.enQueueResponse(message);
+          this.sendAck(message);
           break;
         case ERequestType.SETUP:
           if ( routing.previousPublisherId ) {
             this.resetProducerId(routing.publisherId, routing.previousPublisherId);
           }
-          message.state.deliveredAt = timestamp;
-          message.state.enqueuedAt = timestamp;
-          message.state.handledAt = timestamp;
-          this.enQueueResponse(message);
+          this.sendAck(message);
           break;
         default:
           throw FError.messageTypeError(type);

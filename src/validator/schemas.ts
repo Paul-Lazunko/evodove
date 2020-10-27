@@ -36,7 +36,7 @@ const messageValidationSchema = joi.object({
     id: joi.string().length(DEFAULT_REQUEST_ID_LENGTH).required(),
     channel: joi.string(),
     publisherId: joi.string(),
-    consumerId: joi.string(),
+    subscriberId: joi.string(),
     previousPublisherId: joi.string()
   }).required(),
   inputParams: joi.any(),

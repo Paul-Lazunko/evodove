@@ -3,5 +3,5 @@ export interface IMessageRouting {
   channel?: string,
   publisherId?: string,
   previousPublisherId?: string,
-  consumerId?: string
+  subscriberId?: string
 }

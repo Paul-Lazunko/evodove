@@ -1,4 +1,5 @@
 export enum ERequestType {
+  ACCEPT ='accepted',
   REQUEST ='request',
   PUBLISH ='publish',
   RESPONSE = 'response',
