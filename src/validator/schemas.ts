@@ -35,9 +35,9 @@ const messageValidationSchema = joi.object({
   routing: joi.object({
     id: joi.string().length(DEFAULT_REQUEST_ID_LENGTH).required(),
     channel: joi.string(),
-    producerId: joi.string(),
+    publisherId: joi.string(),
     consumerId: joi.string(),
-    previousProducerId: joi.string()
+    previousPublisherId: joi.string()
   }).required(),
   inputParams: joi.any(),
   outputParams: joi.any(),

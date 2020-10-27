@@ -15,11 +15,12 @@ export class Connection {
   private timeouts: Map<string, NodeJS.Timer>;
   private rawDataString: string;
   private reconnectTimeout: any;
-  private previousProducerId: string;
-  private producerId: string;
+  private previousPublisherId: string;
+  private publisherId: string;
   private enqueuedMessages: IMessage[];
 
   constructor(options: IClientConnectionOptions) {
+    const self = this;
     this.enqueuedMessages = [];
     this.options = options;
     this.rawDataString = '';
@@ -37,9 +38,9 @@ export class Connection {
       }
     });
     this.eventEmitter.addListener('afterConnect', async () => {
-      this.options.subscribers.forEach((subscriber: any, channel: string) => {
+      this.options.subscribers.forEach( (subscriber: any, channel: string) => {
         const message: IMessage = FMessage.construct({ channel, type: ERequestType.SUBSCRIBE });
-        this.send(message).catch(console.log);
+        self.send(message).catch(console.log)
       });
       await this.setup();
       while(this.enqueuedMessages.length) {
@@ -64,8 +65,8 @@ export class Connection {
     });
     this.socket.addListener('close', () => {
       this.isConnected = false;
-      if ( this.producerId ) {
-        this.previousProducerId = this.producerId.toString();
+      if ( this.publisherId ) {
+        this.previousPublisherId = this.publisherId.toString();
       }
       if ( this.options.doReconnectOnClose ) {
         this.eventEmitter.emit('reconnect')
@@ -121,7 +122,7 @@ export class Connection {
             } else {
               this.eventEmitter.emit(`response-${routing.id}`, message);
             }
-            this.producerId = routing.producerId;
+            this.publisherId = routing.publisherId;
             break;
           case ERequestType.REQUEST:
           case ERequestType.PUBLISH:
@@ -133,7 +134,7 @@ export class Connection {
                 if ( type === ERequestType.REQUEST ) {
                   message.outputParams = await handler(inputParams);
                 } else {
-                  handler(inputParams).catch(console.log);
+                  await handler(inputParams)
                 }
                 if ( message.state ) {
                   message.state.handledAt = new Date().getTime();
@@ -190,11 +191,11 @@ export class Connection {
   }
 
   private async setup() {
-    if ( this.previousProducerId ) {
+    if ( this.previousPublisherId ) {
       const message: IMessage = FMessage.construct({
         type: ERequestType.SETUP,
         routing: {
-          previousProducerId: this.previousProducerId
+          previousPublisherId: this.previousPublisherId
         }
       });
       await this.send(message);
@@ -203,7 +204,7 @@ export class Connection {
 
   private write(message: IMessage):void {
     const data: string = CryptoHelper.encrypt(this.options.secureKey, JSON.stringify(message));
-    this.socket.push(data + '\n');
+    this.socket.write(data + '\n');
   }
 
 }

@@ -54,7 +54,7 @@ export class EvodoveServer {
               : CryptoHelper.decrypt(config.secureKey, dataStringSplit[i]);
           const message: IMessage = JSON.parse(decryptedData);
           isCorrectSecureKey = true;
-          message.routing.producerId = id;
+          message.routing.publisherId = id;
           message.state = message.state || { status: EMessageStatus.ACCEPTED, receivedAt: new Date().getTime()};
           savedPreviousStringData = '';
           this.requestHandler(message);
@@ -85,16 +85,16 @@ export class EvodoveServer {
   }
 
   public makeResponse(message: IMessage): boolean {
-    const { producerId } = message.routing;
-    const _socket: Socket = this.sockets.get(producerId);
+    const { publisherId } = message.routing;
+    const _socket: Socket = this.sockets.get(publisherId);
     if ( _socket ) {
       const _response: string = CryptoHelper.encrypt(config.secureKey, JSON.stringify(message));
       try {
         _socket.write(_response + '\n');
         return true;
       } catch (error) {
-        if ( this.sockets.has(producerId) ) {
-          this.sockets.delete(producerId);
+        if ( this.sockets.has(publisherId) ) {
+          this.sockets.delete(publisherId);
         }
         _socket.end();
         return false;

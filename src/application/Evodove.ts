@@ -18,22 +18,22 @@ import { store } from '../store';
 import { Validator } from '../validator';
 
 export class Evodove {
-  public consumers: Map<string, string[]>;
-  public lostProducersTimeouts: Map<string, number>;
-  public lostProducers: Map<string, string>;
+  public subscribers: Map<string, string[]>;
+  public lostPublishersTimeouts: Map<string, number>;
+  public lostPublishers: Map<string, string>;
   public messageBuffer: Map<string, IMessage>;
   protected server: EvodoveServer;
 
   constructor() {
     this.validateConfiguration();
-    this.consumers = new Map<string, string[]>();
-    this.lostProducers = new Map<string, string>();
-    this.lostProducersTimeouts = new Map<string, number>();
+    this.subscribers = new Map<string, string[]>();
+    this.lostPublishers = new Map<string, string>();
+    this.lostPublishersTimeouts = new Map<string, number>();
     this.messageBuffer = new Map<string, IMessage>();
     this.server = new EvodoveServer({
       port: config.port,
       requestHandler: this.enQueueRequest.bind(this),
-      disconnectHandler: this.deleteConsumer.bind(this)
+      disconnectHandler: this.deleteSubscriber.bind(this)
     });
     RequestQueueHandler.initInstances({
       handler: this.processMessage.bind(this)
@@ -81,33 +81,33 @@ export class Evodove {
   protected responseHandler(message: IMessage) {
     const isSent: boolean = this.server.makeResponse(message);
     if ( !isSent ) {
-      if ( this.lostProducers.has(message.routing.producerId) ) {
-        message.routing.producerId = this.lostProducers.get(message.routing.producerId);
+      if ( this.lostPublishers.has(message.routing.publisherId) ) {
+        message.routing.publisherId = this.lostPublishers.get(message.routing.publisherId);
       }
       const timestamp: number =  new Date().getTime();
-      if ( !this.lostProducersTimeouts.has(message.routing.producerId) ) {
-        this.lostProducersTimeouts.set(message.routing.producerId,timestamp)
+      if ( !this.lostPublishersTimeouts.has(message.routing.publisherId) ) {
+        this.lostPublishersTimeouts.set(message.routing.publisherId,timestamp)
       }
-      if ( timestamp - this.lostProducersTimeouts.get(message.routing.producerId) < config.storeRequestValueMs ) {
+      if ( timestamp - this.lostPublishersTimeouts.get(message.routing.publisherId) < config.storeRequestValueMs ) {
         this.enQueueResponse(message);
       }
     }
   }
 
-  public setConsumer(key: string, id: string): void {
-    if ( !this.consumers.has(key) ) {
-      this.consumers.set(key, []);
+  public setSubscriber(key: string, id: string): void {
+    if ( !this.subscribers.has(key) ) {
+      this.subscribers.set(key, []);
     }
-    this.consumers.get(key).push(id);
+    this.subscribers.get(key).push(id);
   }
 
-  public deleteConsumer(id: string) {
-    this.consumers.forEach((consumer: string[], channel: string) => {
-      if ( consumer.includes(id) ) {
-        consumer.splice(consumer.indexOf(id), 1);
+  public deleteSubscriber(id: string) {
+    this.subscribers.forEach((subscribers: string[], channel: string) => {
+      if ( subscribers.includes(id) ) {
+        subscribers.splice(subscribers.indexOf(id), 1);
       }
-      if ( !consumer.length ) {
-        this.consumers.delete(channel);
+      if ( !subscribers.length ) {
+        this.subscribers.delete(channel);
       }
     });
   }
@@ -124,8 +124,8 @@ export class Evodove {
       routing,
       outputParams
     } = message;
-    const { producerId, channel, id } = routing;
-    const sockets: string[] = this.consumers.get(channel);
+    const { publisherId, channel, id } = routing;
+    const sockets: string[] = this.subscribers.get(channel);
     const timestamp: number = new Date().getTime();
     try {
       Validator.validateMessage(message);
@@ -185,15 +185,15 @@ export class Evodove {
           this.messageBuffer.delete(id);
           break;
         case ERequestType.SUBSCRIBE:
-          this.setConsumer(channel, producerId);
+          this.setSubscriber(channel, publisherId);
           message.state.enqueuedAt = timestamp;
           message.state.deliveredAt = timestamp;
           message.state.handledAt = timestamp;
           this.enQueueResponse(message);
           break;
         case ERequestType.SETUP:
-          if ( routing.previousProducerId ) {
-            this.resetProducerId(routing.producerId, routing.previousProducerId);
+          if ( routing.previousPublisherId ) {
+            this.resetProducerId(routing.publisherId, routing.previousPublisherId);
           }
           message.state.deliveredAt = timestamp;
           message.state.enqueuedAt = timestamp;
@@ -210,15 +210,15 @@ export class Evodove {
     }
   }
   protected resetProducerId(producerId: string, previousProducerId: string) {
-    this.lostProducers.forEach((id: string, key: string) => {
+    this.lostPublishers.forEach((id: string, key: string) => {
       if ( id === previousProducerId ) {
-        this.lostProducers.set(key, producerId);
+        this.lostPublishers.set(key, producerId);
       }
     });
-    this.lostProducers.set(previousProducerId, producerId);
+    this.lostPublishers.set(previousProducerId, producerId);
     this.messageBuffer.forEach((message: IMessage) => {
-      if ( message.routing.producerId === previousProducerId ) {
-        message.routing.producerId = producerId;
+      if ( message.routing.publisherId === previousProducerId ) {
+        message.routing.publisherId = producerId;
       }
     });
   }

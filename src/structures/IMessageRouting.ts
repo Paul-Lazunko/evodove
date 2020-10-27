@@ -1,7 +1,7 @@
 export interface IMessageRouting {
   id?: string,
   channel?: string,
-  producerId?: string,
-  previousProducerId?: string,
+  publisherId?: string,
+  previousPublisherId?: string,
   consumerId?: string
 }
