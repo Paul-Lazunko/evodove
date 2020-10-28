@@ -1,2 +1,3 @@
 export * from './CryptoHelper'
-export * from './randomStringGenerator'
+export * from './randomString'
+export * from './generator'

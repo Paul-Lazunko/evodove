@@ -34,6 +34,7 @@ const messageValidationSchema = joi.object({
   type: joi.string().valid(...Object.values(ERequestType)).required(),
   routing: joi.object({
     id: joi.string().length(DEFAULT_REQUEST_ID_LENGTH).required(),
+    streamId: joi.string().length(DEFAULT_REQUEST_ID_LENGTH),
     channel: joi.string(),
     publisherId: joi.string(),
     subscriberId: joi.string(),

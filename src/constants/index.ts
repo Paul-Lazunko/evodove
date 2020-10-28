@@ -4,3 +4,4 @@ export * from './client';
 export * from './EMessageStatus';
 export * from './ERequestType';
 export * from './EPublishType';
+export * from './EStreamHandlerType';

@@ -3,6 +3,7 @@ import { Socket } from 'net';
 import { EMessageStatus, ERequestType } from '../../constants';
 import { CryptoHelper } from '../../helpers';
 import { IClientConnectionOptions } from '../../options/IClientConnectionOptions';
+import { IncomingStream } from "../../stream";
 import { IMessage } from '../../structures';
 import { FMessage } from '../factory';
 
@@ -18,6 +19,7 @@ export class Connection {
   private previousPublisherId: string;
   private publisherId: string;
   private enqueuedMessages: IMessage[];
+  private streams: Map<string, IncomingStream>;
 
   constructor(options: IClientConnectionOptions) {
     const self = this;
@@ -25,6 +27,7 @@ export class Connection {
     this.options = options;
     this.rawDataString = '';
     this.timeouts = new Map<string, any>();
+    this.streams = new Map<string, IncomingStream>();
     this.eventEmitter = new EventEmitter();
     this.eventEmitter.addListener('reconnect', () => {
       // @ts-ignore
@@ -40,6 +43,10 @@ export class Connection {
     this.eventEmitter.addListener('afterConnect', async () => {
       this.options.subscribers.forEach( (subscriber: any, channel: string) => {
         const message: IMessage = FMessage.construct({ channel, type: ERequestType.SUBSCRIBE });
+        self.send(message).catch(console.log)
+      });
+      this.options.listeners.forEach( (listeners: any, channel: string) => {
+        const message: IMessage = FMessage.construct({ channel, type: ERequestType.LISTEN });
         self.send(message).catch(console.log)
       });
       await this.setup();
@@ -78,8 +85,8 @@ export class Connection {
     return new Promise((resolve, reject) => {
       try {
         this.setSocket();
-        this.isStarted = true;
         this.socket.connect({ host: this.options.host, port: this.options.port  });
+        this.isStarted = true;
         resolve();
       } catch(e) {
         reject(e)
@@ -97,61 +104,81 @@ export class Connection {
     let message: IMessage;
     let dataString: string = data.toString();
     let dataStringGroup: string[] = [];
+
     if ( dataString.match('\n') ) {
       dataStringGroup = dataString.split('\n');
+    } else {
+      dataStringGroup = [ dataString ]
     }
-    for (let i=0; i < dataStringGroup.length; i = i + 1) {
-      try {
-        let decryptedData: string = this.rawDataString.length
-          ? CryptoHelper.decrypt(this.options.secureKey, this.rawDataString + dataStringGroup[i])
-          : CryptoHelper.decrypt(this.options.secureKey, dataStringGroup[i]);
+    for (let i = 0; i < dataStringGroup.length; i = i + 1) {
+      if ( dataStringGroup[i] ) {
+        try {
+          let decryptedData: string = this.rawDataString.length
+            ? CryptoHelper.decrypt(this.options.secureKey, this.rawDataString + dataStringGroup[i])
+            : CryptoHelper.decrypt(this.options.secureKey, dataStringGroup[i]);
 
-        message = JSON.parse(decryptedData);
+          message = JSON.parse(decryptedData);
 
-        const { type, routing, state, inputParams, options } = message;
-        const handler = this.options.subscribers.get(routing.channel);
+          const { type, routing, state, inputParams, options } = message;
+          const handler = this.options.subscribers.get(routing.channel);
 
-        this.rawDataString = '';
+          const hasError: boolean = state && state.hasOwnProperty('error');
+          if ( hasError ) {
+            this.eventEmitter.emit(`error-${routing.id}`, state.error);
+          } else {
+            this.eventEmitter.emit(`response-${routing.id}`, message);
+          }
 
-        const hasError: boolean = state.hasOwnProperty('error');
-        if ( hasError ) {
-          this.eventEmitter.emit(`error-${routing.id}`, state.error);
-        } else {
-          this.eventEmitter.emit(`response-${routing.id}`, message);
-        }
-
-        switch ( type ) {
-          case ERequestType.ACCEPT:
-            this.publisherId = routing.publisherId;
-            break;
-          case ERequestType.REQUEST:
-          case ERequestType.PUBLISH:
-            if ( handler ) {
-              try {
-                if ( message.state ) {
-                  message.state.deliveredAt = new Date().getTime();
+          switch ( type ) {
+            case ERequestType.ACCEPT:
+              this.publisherId = routing.publisherId;
+              break;
+            case ERequestType.REQUEST:
+            case ERequestType.PUBLISH:
+              if ( handler ) {
+                try {
+                  if ( message.state ) {
+                    message.state.deliveredAt = new Date().getTime();
+                  }
+                  if ( type === ERequestType.REQUEST ) {
+                    message.outputParams = await handler(inputParams);
+                  } else {
+                    await handler(inputParams)
+                  }
+                  if ( message.state ) {
+                    message.state.handledAt = new Date().getTime();
+                  }
+                } catch(e) {
+                  if ( message.state ) {
+                    message.state.error = e.message;
+                    message.state.status = EMessageStatus.DECLINED;
+                  }
                 }
-                if ( type === ERequestType.REQUEST ) {
-                  message.outputParams = await handler(inputParams);
-                } else {
-                  await handler(inputParams)
-                }
-                if ( message.state ) {
-                  message.state.handledAt = new Date().getTime();
-                }
-              } catch(e) {
-                if ( message.state ) {
-                  message.state.error = e.message;
-                  message.state.status = EMessageStatus.DECLINED;
-                }
+                message.type = ERequestType.RESPONSE;
+                this.send(message);
               }
-              message.type = ERequestType.RESPONSE;
-              this.send(message);
-            }
-            break;
+              break;
+            case ERequestType.STREAM_START:
+              this.streams.set(routing.streamId, new IncomingStream({}));
+              break;
+            case ERequestType.STREAM_CHUNK:
+              if ( this.streams.has(routing.streamId) ) {
+                this.streams.get(routing.streamId).write(Buffer.from(inputParams));
+              }
+              break;
+            case ERequestType.STREAM_END:
+              if ( this.streams.has(routing.streamId) ) {
+                const stream: IncomingStream = this.streams.get(routing.streamId);
+                const handler = this.options.listeners.get(routing.channel);
+                await handler(stream.restore());
+                this.streams.delete(routing.streamId);
+              }
+              break;
+          }
+          this.rawDataString = '';
+        } catch(e) {
+          this.rawDataString += dataStringGroup[i];
         }
-      } catch(e) {
-        this.rawDataString += dataStringGroup[i];
       }
     }
 

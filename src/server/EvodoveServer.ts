@@ -1,7 +1,7 @@
 import { createServer, Server, Socket } from 'net';
 import { config } from '../config';
 import { EMessageStatus, ERequestType } from '../constants';
-import { CryptoHelper, randomStringGenerator } from '../helpers';
+import { CryptoHelper, randomString } from '../helpers';
 import { IServerOptions } from '../options';
 import { IMessage } from '../structures';
 
@@ -39,7 +39,7 @@ export class EvodoveServer {
   }
 
   onConnection(socket: Socket) {
-    const id: string = randomStringGenerator(27, true);
+    const id: string = randomString(27, true);
     let savedPreviousStringData = '';
     let isCorrectSecureKey: boolean = false;
     this.sockets.set(id, socket);

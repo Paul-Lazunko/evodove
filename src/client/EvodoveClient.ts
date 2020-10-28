@@ -1,10 +1,14 @@
+import { Readable } from "stream";
 import {
   DEFAULT_CLIENT_DO_RECONNECT_ON_CLOSE,
-  DEFAULT_CLIENT_RECONNECT_INTERVAL, DEFAULT_CLIENT_REQUEST_TIMEOUT,
+  DEFAULT_CLIENT_RECONNECT_INTERVAL,
+  DEFAULT_CLIENT_REQUEST_TIMEOUT,
   EPublishType,
   ERequestType
 } from '../constants';
+import { randomString } from "../helpers";
 import { IClientOptions } from '../options';
+import { OutgoingStream } from "../stream";
 import { IMessage, IMessageOptions } from '../structures';
 import { Validator } from '../validator';
 import { Connection } from './connection';
@@ -13,7 +17,8 @@ import { FMessage } from './factory';
 export class EvodoveClient {
   private options: IClientOptions;
   private connection: Connection;
-  private subscribers: Map<string, (inputParams: any) => any>;
+  private readonly subscribers: Map<string, (inputParams: any) => any>;
+  private readonly listeners: Map<string, (stream: Readable) => any>;
 
   constructor(options: IClientOptions) {
     Validator.validateClientOptions(options);
@@ -28,7 +33,12 @@ export class EvodoveClient {
     }
     this.options = options;
     this.subscribers = new Map<string, (inputParams: any) => any>();
-    this.connection = new Connection({ subscribers: this.subscribers, ...options });
+    this.listeners = new Map<string, (stream: Readable) => any>();
+    this.connection = new Connection({
+      subscribers: this.subscribers,
+      listeners: this.listeners,
+      ...options
+    });
   }
 
   public connect(): Promise<void> {
@@ -43,6 +53,12 @@ export class EvodoveClient {
     Validator.validateChannel(channel);
     Validator.validateHandler(handler);
     this.subscribers.set(channel, handler);
+  }
+
+  public listen(channel: string, handler: (stream: Readable) => any ): void {
+    Validator.validateChannel(channel);
+    Validator.validateHandler(handler);
+    this.listeners.set(channel, handler);
   }
 
   public publish(channel: string, inputParams: any, options?: IMessageOptions): Promise<any> {
@@ -68,6 +84,43 @@ export class EvodoveClient {
       type: ERequestType.REQUEST
     });
     return this.connection.send(message);
+  }
+
+  protected getStreamHandler(channel: string, streamId: string, type: ERequestType.STREAM_CHUNK | ERequestType.STREAM_END) {
+    return (chunk?: any) => {
+      const message = FMessage.construct({
+        type,
+        channel,
+        routing: {
+          streamId
+        },
+        inputParams: type === ERequestType.STREAM_CHUNK ? chunk.toString() : {}
+      });
+      return this.connection.send(message);
+    }
+  }
+
+  public stream(channel: string, stream: Readable) {
+    const streamId: string = randomString(32, true)
+    const outgoingStream: OutgoingStream = new OutgoingStream({
+      onWrite: this.getStreamHandler(channel, streamId, ERequestType.STREAM_CHUNK).bind(this),
+      onEnd: this.getStreamHandler(channel, streamId, ERequestType.STREAM_END).bind(this)
+    });
+    const message = FMessage.construct({
+      type: ERequestType.STREAM_START,
+      channel,
+      routing: {
+        streamId
+      },
+      inputParams: {}
+    });
+    this.connection.send(message)
+      .then(() => {
+      stream.pipe(outgoingStream);
+    })
+      .catch((error: Error) => {
+        console.log(error.message)
+      })
   }
 
 }
