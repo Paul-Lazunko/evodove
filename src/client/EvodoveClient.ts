@@ -108,8 +108,8 @@ export class EvodoveClient {
         onEnd: this.getStreamHandler(channel, streamId, ERequestType.STREAM_END, resolve).bind(this)
       });
       const message = FMessage.construct({
-        type: ERequestType.STREAM_START,
         channel,
+        type: ERequestType.STREAM_START,
         routing: {
           streamId
         },
