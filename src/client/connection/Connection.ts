@@ -3,8 +3,8 @@ import { Socket } from 'net';
 import { EMessageStatus, ERequestType } from '../../constants';
 import { CryptoHelper } from '../../helpers';
 import { IClientConnectionOptions } from '../../options/IClientConnectionOptions';
-import { IncomingStream } from "../../stream";
-import { IMessage } from '../../structures';
+import { IncomingStream } from '../../stream';
+import { IMessage, INumberedChunk } from '../../structures';
 import { FMessage } from '../factory';
 
 export class Connection {
@@ -20,6 +20,7 @@ export class Connection {
   private publisherId: string;
   private enqueuedMessages: IMessage[];
   private streams: Map<string, IncomingStream>;
+  private streamsMeta: Map<string, { [key: string]: any }>;
 
   constructor(options: IClientConnectionOptions) {
     const self = this;
@@ -28,6 +29,7 @@ export class Connection {
     this.rawDataString = '';
     this.timeouts = new Map<string, any>();
     this.streams = new Map<string, IncomingStream>();
+    this.streamsMeta = new Map<string, {[p: string]: any}>();
     this.eventEmitter = new EventEmitter();
     this.eventEmitter.addListener('reconnect', () => {
       // @ts-ignore
@@ -118,7 +120,6 @@ export class Connection {
             : CryptoHelper.decrypt(this.options.secureKey, dataStringGroup[i]);
 
           message = JSON.parse(decryptedData);
-
           const { type, routing, state, inputParams, options } = message;
           const handler = this.options.subscribers.get(routing.channel);
 
@@ -160,18 +161,24 @@ export class Connection {
               break;
             case ERequestType.STREAM_START:
               this.streams.set(routing.streamId, new IncomingStream({}));
+              this.streamsMeta.set(routing.streamId, inputParams);
               break;
             case ERequestType.STREAM_CHUNK:
               if ( this.streams.has(routing.streamId) ) {
-                this.streams.get(routing.streamId).write(Buffer.from(inputParams));
+                const parsedParams = JSON.parse(inputParams);
+                const buffer: Buffer = Buffer.from(parsedParams.data)
+                this.streams.get(routing.streamId).write(buffer);
               }
               break;
             case ERequestType.STREAM_END:
               if ( this.streams.has(routing.streamId) ) {
                 const stream: IncomingStream = this.streams.get(routing.streamId);
                 const handler = this.options.listeners.get(routing.channel);
-                await handler(stream.restore());
+                const meta = this.streamsMeta.get(routing.streamId);
+                await handler(stream.restore(), meta);
+                this.streams.get(routing.streamId).end();
                 this.streams.delete(routing.streamId);
+                this.streamsMeta.delete(routing.streamId);
               }
               break;
           }
@@ -184,7 +191,7 @@ export class Connection {
 
   }
 
-  public send(message: IMessage): Promise<IMessage> {
+  public send(message: IMessage, resolver?: (...args: any[]) => any): Promise<IMessage> {
     const { routing } = message;
     return new Promise((resolve, reject) => {
       this.timeouts.set(routing.id, setTimeout(() => {
@@ -196,6 +203,9 @@ export class Connection {
         this.timeouts.delete(routing.id);
         this.eventEmitter.removeAllListeners(`response-${routing.id}`);
         this.eventEmitter.removeAllListeners(`error-${routing.id}`);
+        if ( resolver ) {
+          resolver();
+        }
         resolve(message.outputParams);
       });
       this.eventEmitter.addListener(`error-${routing.id}`, (error: string) => {

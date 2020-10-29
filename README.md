@@ -68,6 +68,11 @@ subscriber.subscribe('bar', (data) => {
   return { works: true  }
 });
 
+subscriber.onStream('stream', (stream, meta) => {
+  // do something with stream and meta
+});
+
+
 subscriber.connect().catch(console.log);
 ```
 
@@ -76,6 +81,7 @@ subscriber.connect().catch(console.log);
 publisher.js example
 
 ```ecmascript 6
+import fs from 'fs';
 import { EvodoveClient, EPublishType } from 'evodove';
 
 const publisher = new EvodoveClient({
@@ -91,7 +97,10 @@ async function start() {
   await publisher.connect();
   await publisher.publish('foo', { foo: 'bar' }, { type: EPublishType.BROADCAST} );
   const response = await publisher.request('bar', { foo: 'bar'  });
-  console.log({ response })
+  console.log({ response });
+  const stream = fs.createReadStream('/path/to/file', { highWaterMark: 1024 });
+  await publisher.stream('stream', stream, { mimeType: 'application/json' });
+
   await publisher.disconnect();
 }
 
@@ -108,13 +117,15 @@ You can use next environment variables:
 - requestTimeout -  value in ms that defines maximal execution time for request from publisher side;
 - secureKey - secret key, the same as at the server side;
 
-Client has 6 methods that Your can use:
+Client has 8 methods that Your can use:
 
 - **connect** and **disconnect** - to connect or disconnect from server;
 - **subscribe** - to subscribe to some channel (takes 2 arguments: _channel_ (string) and _handler_ (function) that will be called).
 Client can subscribes  to many channels and uses separated handler for it.
 - **publish** - to publish some date in some channel (takes 3 arguments: _channel_ (string), _data_ (any) that will be published and _options_ object);
 **Options** can has next properties: _type_ (EPublishType enum/string) - 'direct' or 'broadcast', _waitSubscriber_ (boolean) - that indicates to Message Broker to wait while one of subscribers will be connected, _ttl_ (positive integer) - ms value during that Message Broker will be waiting for subscribers to deliver message.
-- **request** - to make request and get response from subscriber side (takes 2 arguments: _channel_ and _data_) 
+- **request** - to make request and get response from subscriber side (takes 2 _arguments_: _channel_ and _data_) 
+- **stream** - to transfer binary data between microservices - takes 3 arguments: _channel_ (string), _stream_ (Readable), _meta_ (configuration object)
+- **onStream** - to transfer binary data between microservices - takes 2 arguments: _channel_ (string), _handler_ (function that takes 2 arguments: _stream_ (Readable), _meta_ (configuration object) )
 
-So, as You can see, usage of this solution is very simple and can be helpful for developing microservices based systems written with Node.js
+So, as You can see, usage of this solution is very easy to use and can be helpful for developing microservices based systems written with Node.js

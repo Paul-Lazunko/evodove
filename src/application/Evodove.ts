@@ -14,8 +14,8 @@ import { addStoreHandler } from '../eventEmmitter';
 import { RequestQueueHandler, ResponseQueueHandler } from '../queue';
 import { EvodoveServer } from '../server';
 import { store } from '../store';
-import { IntermediateStream } from "../stream";
-import { IMessage, IMessageRouting } from '../structures';
+import { IntermediateStream } from '../stream';
+import { IMessage, IMessageRouting, INumberedChunk } from '../structures';
 import { Validator } from '../validator';
 
 export class Evodove {
@@ -29,22 +29,25 @@ export class Evodove {
   protected listeners: Map<string, string[]>;
 
   protected streamListeners: Map<string, string[]>;
-  protected streamListenersLastChunkIndexes: Map<string, Map<string, number>>;
 
   protected lostPublishersTimeouts: Map<string, number>;
   protected lostPublishers: Map<string, string>;
+
+  protected lostListenersTimeouts: Map<string, number>;
+  protected lostListeners: Map<string, string>;
 
 
   constructor() {
     this.validateConfiguration();
     this.streams  = new Map<string,  Map<string, IntermediateStream>>();
     this.streamListeners = new Map<string, string[]>();
-    this.streamListenersLastChunkIndexes = new Map<string, Map<string, number>>();
     this.messageBuffer = new Map<string, IMessage>();
     this.listeners = new Map<string, string[]>();
     this.subscribers = new Map<string, string[]>();
     this.lostPublishers = new Map<string, string>();
     this.lostPublishersTimeouts = new Map<string, number>();
+    this.lostListeners = new Map<string, string>();
+    this.lostListenersTimeouts = new Map<string, number>();
     this.server = new EvodoveServer({
       port: config.port,
       requestHandler: this.enQueueRequest.bind(this),
@@ -94,17 +97,53 @@ export class Evodove {
   }
 
   protected responseHandler(message: IMessage) {
+    const timestamp: number =  new Date().getTime();
+
+    if ( [  ERequestType.STREAM_CHUNK,  ERequestType.STREAM_END].includes(message.type) ) {
+      message.routing.publisherId = message.routing.subscriberId;
+    }
+
     const isSent: boolean = this.server.makeResponse(message);
     if ( !isSent ) {
-      if ( this.lostPublishers.has(message.routing.publisherId) ) {
-        message.routing.publisherId = this.lostPublishers.get(message.routing.publisherId);
-      }
-      const timestamp: number =  new Date().getTime();
-      if ( !this.lostPublishersTimeouts.has(message.routing.publisherId) ) {
-        this.lostPublishersTimeouts.set(message.routing.publisherId,timestamp)
-      }
-      if ( timestamp - this.lostPublishersTimeouts.get(message.routing.publisherId) < config.storeRequestValueMs ) {
-        this.enQueueResponse(message);
+      switch (message.type) {
+        case ERequestType.STREAM_CHUNK:
+        case ERequestType.STREAM_END:
+          if ( this.lostListeners.has(message.routing.subscriberId) ) {
+            message.routing.publisherId = this.lostListeners.get(message.routing.subscriberId);
+            message.routing.subscriberId = this.lostListeners.get(message.routing.subscriberId);
+          }
+          const { subscriberId } = message.routing;
+          if ( !this.lostListenersTimeouts.has(subscriberId) ) {
+            this.lostListenersTimeouts.set(subscriberId, timestamp)
+          }
+          if ( timestamp - this.lostListenersTimeouts.get(subscriberId) < config.storeRequestValueMs ) {
+            this.enQueueResponse(message);
+          } else {
+            this.streamListeners.forEach((listeners: string[]) => {
+              if ( listeners.includes(subscriberId) ) {
+                listeners.splice(listeners.indexOf(subscriberId), 1);
+              }
+            });
+            this.streams.forEach((holder: Map<string, IntermediateStream>) => {
+              if ( holder.has(subscriberId) ) {
+                const stream = holder.get(subscriberId);
+                holder.delete(subscriberId);
+                stream.destroy();
+              }
+            })
+          }
+          break;
+        default:
+          if ( this.lostPublishers.has(message.routing.publisherId) ) {
+            message.routing.publisherId = this.lostPublishers.get(message.routing.publisherId);
+          }
+          if ( !this.lostPublishersTimeouts.has(message.routing.publisherId) ) {
+            this.lostPublishersTimeouts.set(message.routing.publisherId, timestamp)
+          }
+          if ( timestamp - this.lostPublishersTimeouts.get(message.routing.publisherId) < config.storeRequestValueMs ) {
+            this.enQueueResponse(message);
+          }
+          break;
       }
     }
   }
@@ -165,32 +204,17 @@ export class Evodove {
 
   protected getStreamHandler(socket: string, routing: IMessageRouting, type: EStreamHandlerType) {
     const { publisherId, channel, id, streamId } = routing;
-    const timestamp: number = new Date().getTime();
-    if (  !this.streamListenersLastChunkIndexes.has(streamId) ) {
-      this.streamListenersLastChunkIndexes.set(streamId, new Map<string, number>());
-    }
-    const indexes: Map<string, number> = this.streamListenersLastChunkIndexes.get(streamId);
 
-    return (chunk?: any) => {
-
-      if ( type === EStreamHandlerType.ON_WRITE ) {
-        if ( !indexes.has(socket) ) {
-          indexes.set(socket, 0)
-        } else {
-          const index = indexes.get(socket);
-          indexes.set(socket, index + 1);
-        }
-      }
-
+    return (chunk?: INumberedChunk) => {
       const message: IMessage = {
         type: type === EStreamHandlerType.ON_WRITE ? ERequestType.STREAM_CHUNK : ERequestType.STREAM_END,
-        routing: { publisherId, channel, id, streamId },
-        inputParams: type === EStreamHandlerType.ON_WRITE ? chunk.toString(): {}
+        routing: { publisherId, channel, id, streamId, subscriberId: socket },
+        inputParams: type === EStreamHandlerType.ON_WRITE ? JSON.stringify(chunk): {}
       };
-
       this.server.makeRequest(
         [ socket ],
-        message
+        message,
+        this.responseHandler.bind(this)
       );
     }
   }
@@ -210,7 +234,6 @@ export class Evodove {
     const timestamp: number = new Date().getTime();
     try {
       Validator.validateMessage(message);
-      console.log(message)
       switch(type) {
         case ERequestType.REQUEST:
           if ( !subscribersSockets || !subscribersSockets.length ) {
@@ -288,7 +311,7 @@ export class Evodove {
           if ( this.streams.has(streamId) ) {
             this.streams.get(streamId).forEach((stream: IntermediateStream, socket: string) => {
               if ( inputParams ) {
-                stream.write(Buffer.from(inputParams));
+                stream.write(Buffer.from(JSON.stringify(inputParams)));
               }
             })
           }
@@ -301,7 +324,6 @@ export class Evodove {
               this.streams.get(streamId).delete(socket);
             });
             this.streamListeners.delete(streamId);
-            this.streamListenersLastChunkIndexes.delete(streamId);
           }
           this.sendAck(message);
           break;
@@ -316,7 +338,7 @@ export class Evodove {
           throw FError.messageTypeError(type);
       }
     } catch(e) {
-      console.log({e})
+      console.log({e},'!')
       message.state.status = EMessageStatus.DECLINED;
       message.state.error = e.message;
       this.enQueueResponse(message);
@@ -339,20 +361,18 @@ export class Evodove {
   }
 
   protected resetListenerId(producerId: string, previousProducerId: string) {
+    this.lostListeners.forEach((id: string, key: string) => {
+      if ( id === previousProducerId ) {
+        this.lostPublishers.set(key, producerId);
+      }
+    });
+    this.lostListeners.set(previousProducerId, producerId);
     this.streamListeners.forEach((listeners: string[], channel: string) => {
       if ( listeners.includes(previousProducerId) ) {
         listeners.splice(listeners.indexOf(previousProducerId),1);
         listeners.push(producerId);
       }
     });
-    this.streamListenersLastChunkIndexes.forEach((listeners: Map<string, number>) => {
-      if ( listeners.has(previousProducerId) ) {
-        const index: number = listeners.get(previousProducerId);
-        listeners.set(producerId, index);
-        listeners.delete(previousProducerId);
-      }
-    })
-
   }
 
   protected initStore() {

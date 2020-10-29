@@ -1,23 +1,17 @@
 import stream from 'stream';
 import { IStreamOptions } from '../options';
-import { IRestorableStream } from "../structures";
-import { makeGenerator } from "../helpers";
+import { INumberedChunk } from '../structures';
 
-export class IntermediateStream extends stream.Duplex implements IRestorableStream<IntermediateStream> {
+export class IntermediateStream extends stream.Duplex {
 
-  private chunks: any[];
-  private restoredChunks: IterableIterator<any>;
   private readonly options: IStreamOptions;
 
   constructor(options: IStreamOptions) {
     super();
     this.options = options;
-    this.chunks = [];
-    this.restoredChunks = makeGenerator([]);
   }
 
-  _write(chunk: Buffer|string, enc: string, next: (...args: any[]) => any ) {
-    this.chunks.push(chunk);
+  _write(chunk: INumberedChunk, enc: string, next: (...args: any[]) => any ) {
     if ( Object.hasOwnProperty.call(this.options, 'onWrite') ) {
       this.options.onWrite(chunk);
     }
@@ -30,12 +24,4 @@ export class IntermediateStream extends stream.Duplex implements IRestorableStre
     }
   }
 
-  _read() {
-    this.push(this.restoredChunks.next().value || null);
-  }
-
-  restore(lastChunkIndex: number) {
-    this.restoredChunks = makeGenerator(this.chunks.slice(lastChunkIndex + 1, this.chunks.length - 1));
-    return this;
-  }
 }

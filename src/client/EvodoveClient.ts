@@ -1,4 +1,4 @@
-import { Readable } from "stream";
+import { Readable } from 'stream';
 import {
   DEFAULT_CLIENT_DO_RECONNECT_ON_CLOSE,
   DEFAULT_CLIENT_RECONNECT_INTERVAL,
@@ -6,10 +6,10 @@ import {
   EPublishType,
   ERequestType
 } from '../constants';
-import { randomString } from "../helpers";
+import { randomString } from '../helpers';
 import { IClientOptions } from '../options';
-import { OutgoingStream } from "../stream";
-import { IMessage, IMessageOptions } from '../structures';
+import { OutgoingStream } from '../stream';
+import { IMessage, IMessageOptions, INumberedChunk } from '../structures';
 import { Validator } from '../validator';
 import { Connection } from './connection';
 import { FMessage } from './factory';
@@ -18,7 +18,7 @@ export class EvodoveClient {
   private options: IClientOptions;
   private connection: Connection;
   private readonly subscribers: Map<string, (inputParams: any) => any>;
-  private readonly listeners: Map<string, (stream: Readable) => any>;
+  private readonly listeners: Map<string, (stream: Readable, meta: { [ key: string ]: any }) => any>;
 
   constructor(options: IClientOptions) {
     Validator.validateClientOptions(options);
@@ -55,7 +55,7 @@ export class EvodoveClient {
     this.subscribers.set(channel, handler);
   }
 
-  public listen(channel: string, handler: (stream: Readable) => any ): void {
+  public onStream(channel: string, handler: (stream: Readable, meta: { [key: string]: any }) => any ): void {
     Validator.validateChannel(channel);
     Validator.validateHandler(handler);
     this.listeners.set(channel, handler);
@@ -86,41 +86,43 @@ export class EvodoveClient {
     return this.connection.send(message);
   }
 
-  protected getStreamHandler(channel: string, streamId: string, type: ERequestType.STREAM_CHUNK | ERequestType.STREAM_END) {
-    return (chunk?: any) => {
+  protected getStreamHandler(channel: string, streamId: string, type: ERequestType.STREAM_CHUNK | ERequestType.STREAM_END, resolver?: (...args: any[]) => any ) {
+    return (chunk?: INumberedChunk) => {
       const message = FMessage.construct({
         type,
         channel,
         routing: {
           streamId
         },
-        inputParams: type === ERequestType.STREAM_CHUNK ? chunk.toString() : {}
+        inputParams: type === ERequestType.STREAM_CHUNK ? chunk : {}
       });
       return this.connection.send(message);
     }
   }
 
-  public stream(channel: string, stream: Readable) {
-    const streamId: string = randomString(32, true)
-    const outgoingStream: OutgoingStream = new OutgoingStream({
-      onWrite: this.getStreamHandler(channel, streamId, ERequestType.STREAM_CHUNK).bind(this),
-      onEnd: this.getStreamHandler(channel, streamId, ERequestType.STREAM_END).bind(this)
-    });
-    const message = FMessage.construct({
-      type: ERequestType.STREAM_START,
-      channel,
-      routing: {
-        streamId
-      },
-      inputParams: {}
-    });
-    this.connection.send(message)
-      .then(() => {
-      stream.pipe(outgoingStream);
+  public stream(channel: string, stream: Readable, meta: { [key: string]: any }) {
+    return new Promise((resolve, reject) => {
+      const streamId: string = randomString(32, true);
+      const outgoingStream: OutgoingStream = new OutgoingStream({
+        onWrite: this.getStreamHandler(channel, streamId, ERequestType.STREAM_CHUNK).bind(this),
+        onEnd: this.getStreamHandler(channel, streamId, ERequestType.STREAM_END, resolve).bind(this)
+      });
+      const message = FMessage.construct({
+        type: ERequestType.STREAM_START,
+        channel,
+        routing: {
+          streamId
+        },
+        inputParams: meta
+      });
+      this.connection.send(message)
+        .then(() => {
+          stream.pipe(outgoingStream);
+        })
+        .catch((error: Error) => {
+          console.error(error)
+        })
     })
-      .catch((error: Error) => {
-        console.log(error.message)
-      })
   }
 
 }

@@ -93,6 +93,7 @@ export class EvodoveServer {
         _socket.write(_response + '\n');
         return true;
       } catch (error) {
+        console.log({ error })
         if ( this.sockets.has(publisherId) ) {
           this.sockets.delete(publisherId);
         }

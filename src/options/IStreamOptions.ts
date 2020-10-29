@@ -1,4 +1,6 @@
+import { INumberedChunk } from '../structures';
+
 export interface IStreamOptions {
-  onWrite?: (chunk: any) => any,
+  onWrite?: (numberedChunk: INumberedChunk) => any,
   onEnd?: () => any
 }
