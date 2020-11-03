@@ -1,10 +1,10 @@
 # evodove
 
 Evodove is a Message Broker for Node.js applications. It provides next advantages to Your projects:
-- security - clients and server interact with encrypted frames without keys sharing
-- fast - message delivering takes few ms with delivering guarantee
-- resistant - server/clients are resistant to crashes and loosing connection
-- flexible - You can use it in any way You want
+- security - clients and server interact with encrypted frames only without keys sharing and can do it over the global network without fear of data leakage
+- velocity - message delivering takes few (1-3) ms with delivering guarantee
+- stability - server/clients are resistant to crashes and loosing connection
+- flexible - the number of restrictions is minimal and this solution easily fits into any architecture
 
 ###### Install package
 
@@ -127,5 +127,7 @@ Client can subscribes  to many channels and uses separated handler for it.
 - **request** - to make request and get response from subscriber side (takes 2 _arguments_: _channel_ and _data_) 
 - **stream** - to transfer binary data between microservices - takes 3 arguments: _channel_ (string), _stream_ (Readable), _meta_ (configuration object)
 - **onStream** - to transfer binary data between microservices - takes 2 arguments: _channel_ (string), _handler_ (function that takes 2 arguments: _stream_ (Readable), _meta_ (configuration object) )
+
+Note, that stream at the subscriber`s side will be available only when data transferring was finished. Real time streams transfer is only announced feature and will be available in the next versions
 
 So, as You can see, usage of this solution is very easy to use and can be helpful for developing microservices based systems written with Node.js
