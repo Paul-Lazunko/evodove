@@ -9,7 +9,7 @@ export class FError {
   }
 
   public static requestError(message: string) {
-    return FError.construct(`Invalid structure of message: ${message}`);
+    return FError.construct(`Invalid structure of the message: ${message}`);
   }
 
   public static messageTypeError(type: string) {
@@ -17,7 +17,7 @@ export class FError {
   }
 
   public static subscriberExistenceError (channel: string) {
-    return FError.construct(`Publish Error: subscribers for channel '${channel}' don't exist`)
+    return FError.construct(`Publish Error: subscribers for channel '${channel}' doesn't exist`)
   }
 
   public static paramsError (message: string) {
