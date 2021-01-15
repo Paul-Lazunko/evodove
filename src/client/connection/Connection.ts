@@ -182,6 +182,12 @@ export class Connection {
                 this.streamsMeta.delete(routing.streamId);
               }
               break;
+            case ERequestType.STREAM_CANCEL:
+              if ( this.streams.has(routing.streamId) ) {
+                this.streams.delete(routing.streamId);
+                this.streamsMeta.delete(routing.streamId);
+              }
+              break;
           }
           this.rawDataString = '';
         } catch(e) {

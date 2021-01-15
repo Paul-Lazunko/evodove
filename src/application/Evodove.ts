@@ -99,7 +99,7 @@ export class Evodove {
   protected responseHandler(message: IMessage) {
     const timestamp: number =  new Date().getTime();
 
-    if ( [  ERequestType.STREAM_CHUNK,  ERequestType.STREAM_END].includes(message.type) ) {
+    if ([ ERequestType.STREAM_CHUNK,  ERequestType.STREAM_END, ERequestType.STREAM_CANCEL ].includes(message.type) ) {
       message.routing.publisherId = message.routing.subscriberId;
     }
 
@@ -204,10 +204,21 @@ export class Evodove {
 
   protected getStreamHandler(socket: string, routing: IMessageRouting, type: EStreamHandlerType) {
     const { publisherId, channel, id, streamId } = routing;
-
     return (chunk?: INumberedChunk) => {
+      let messageType: ERequestType;
+      switch (type) {
+        case EStreamHandlerType.ON_WRITE:
+          messageType = ERequestType.STREAM_CHUNK
+          break;
+        case EStreamHandlerType.ON_END:
+          messageType = ERequestType.STREAM_END
+          break;
+        case EStreamHandlerType.ON_CANCEL:
+          messageType = ERequestType.STREAM_CANCEL
+          break;
+      }
       const message: IMessage = {
-        type: type === EStreamHandlerType.ON_WRITE ? ERequestType.STREAM_CHUNK : ERequestType.STREAM_END,
+        type: messageType,
         routing: { publisherId, channel, id, streamId, subscriberId: socket },
         inputParams: type === EStreamHandlerType.ON_WRITE ? JSON.stringify(chunk): {}
       };
@@ -303,7 +314,8 @@ export class Evodove {
           listenersSockets.forEach((socket: string) => {
             streams.set(socket, new IntermediateStream({
               onWrite: this.getStreamHandler(socket, routing, EStreamHandlerType.ON_WRITE).bind(this),
-              onEnd: this.getStreamHandler(socket, routing, EStreamHandlerType.ON_END).bind(this)
+              onEnd: this.getStreamHandler(socket, routing, EStreamHandlerType.ON_END).bind(this),
+              onCancel: this.getStreamHandler(socket, routing, EStreamHandlerType.ON_CANCEL).bind(this)
             }));
           });
           this.server.makeRequest(listenersSockets, message);
@@ -329,6 +341,16 @@ export class Evodove {
           }
           this.sendAck(message);
           break;
+        case ERequestType.STREAM_CANCEL:
+          if ( this.streams.has(streamId) ) {
+            this.streams.get(streamId).forEach((stream: IntermediateStream, socket: string) => {
+              stream.cancel();
+              this.streams.get(streamId).delete(socket);
+            });
+            this.streamListeners.delete(streamId);
+          }
+          this.sendAck(message);
+          break;
         case ERequestType.SETUP:
           if ( previousPublisherId ) {
             this.resetProducerId(publisherId, previousPublisherId);
@@ -340,7 +362,7 @@ export class Evodove {
           throw FError.messageTypeError(type);
       }
     } catch(e) {
-      console.log({e},'!')
+      console.log({ e })
       message.state.status = EMessageStatus.DECLINED;
       message.state.error = e.message;
       this.enQueueResponse(message);

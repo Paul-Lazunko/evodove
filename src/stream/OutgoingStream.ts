@@ -20,6 +20,14 @@ export class OutgoingStream extends stream.Writable {
   }
 
   end() {
-    this.options.onEnd();
+    if ( Object.hasOwnProperty.call(this.options, 'onEnd') ) {
+      this.options.onEnd();
+    }
+  }
+
+  cancel() {
+    if ( Object.hasOwnProperty.call(this.options, 'onCancel') ) {
+      this.options.onCancel();
+    }
   }
 }

@@ -24,4 +24,10 @@ export class IntermediateStream extends stream.Duplex {
     }
   }
 
+  cancel() {
+    if ( Object.hasOwnProperty.call(this.options, 'onCancel') ) {
+      this.options.onCancel();
+    }
+  }
+
 }

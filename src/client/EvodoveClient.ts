@@ -86,7 +86,7 @@ export class EvodoveClient {
     return this.connection.send(message);
   }
 
-  protected getStreamHandler(channel: string, streamId: string, type: ERequestType.STREAM_CHUNK | ERequestType.STREAM_END, resolver?: (...args: any[]) => any ) {
+  protected getStreamHandler(channel: string, streamId: string, type: ERequestType, resolver?: (...args: any[]) => any ) {
     return (chunk?: INumberedChunk) => {
       const message = FMessage.construct({
         type,
@@ -105,7 +105,8 @@ export class EvodoveClient {
       const streamId: string = randomString(32, true);
       const outgoingStream: OutgoingStream = new OutgoingStream({
         onWrite: this.getStreamHandler(channel, streamId, ERequestType.STREAM_CHUNK).bind(this),
-        onEnd: this.getStreamHandler(channel, streamId, ERequestType.STREAM_END, resolve).bind(this)
+        onEnd: this.getStreamHandler(channel, streamId, ERequestType.STREAM_END, resolve).bind(this),
+        onCancel: this.getStreamHandler(channel, streamId, ERequestType.STREAM_CANCEL, reject).bind(this)
       });
       const message = FMessage.construct({
         channel,
@@ -117,10 +118,13 @@ export class EvodoveClient {
       });
       this.connection.send(message)
         .then(() => {
+          stream.on('error', () => {
+            outgoingStream.cancel();
+          })
           stream.pipe(outgoingStream);
         })
         .catch((error: Error) => {
-          console.error(error)
+          reject(error)
         })
     })
   }
