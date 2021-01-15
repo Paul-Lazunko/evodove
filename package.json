@@ -1,6 +1,6 @@
 {
   "name": "evodove",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "author": "Paul Lazunko",
   "description": "Node.js message broker",
   "keywords": [
