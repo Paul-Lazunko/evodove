@@ -285,8 +285,8 @@ export class Evodove {
             storedMessage.state.handledAt = state.handledAt;
             this.enQueueResponse(Object.assign({}, storedMessage));
             this.messageBuffer.delete(id);
-            this.sendAck(message);
           }
+          this.sendAck(message);
           break;
         case ERequestType.SUBSCRIBE:
           this.setSubscriber(channel, publisherId);
