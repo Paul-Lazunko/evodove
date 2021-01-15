@@ -278,13 +278,15 @@ export class Evodove {
           break;
         case ERequestType.RESPONSE:
           const storedMessage: IMessage = this.messageBuffer.get(id);
-          storedMessage.outputParams = outputParams;
-          storedMessage.type = ERequestType.RESPONSE;
-          storedMessage.state.deliveredAt = state.deliveredAt;
-          storedMessage.state.handledAt = state.handledAt;
-          this.enQueueResponse(Object.assign({}, storedMessage));
-          this.messageBuffer.delete(id);
-          this.sendAck(message);
+          if ( storedMessage ) {
+            storedMessage.outputParams = outputParams;
+            storedMessage.type = ERequestType.RESPONSE;
+            storedMessage.state.deliveredAt = state.deliveredAt;
+            storedMessage.state.handledAt = state.handledAt;
+            this.enQueueResponse(Object.assign({}, storedMessage));
+            this.messageBuffer.delete(id);
+            this.sendAck(message);
+          }
           break;
         case ERequestType.SUBSCRIBE:
           this.setSubscriber(channel, publisherId);
