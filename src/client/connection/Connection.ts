@@ -104,7 +104,7 @@ export class Connection {
 
   private  async onData(data: string): Promise<void> {
     let message: IMessage;
-    let dataString: string = data.toString();
+    const dataString: string = data.toString();
     let dataStringGroup: string[] = [];
 
     if ( dataString.match('\n') ) {
@@ -143,6 +143,8 @@ export class Connection {
                   }
                   if ( type === ERequestType.REQUEST ) {
                     message.outputParams = await handler(inputParams);
+                    message.type = ERequestType.RESPONSE;
+                    await this.send(message);
                   } else {
                     await handler(inputParams)
                   }
@@ -155,8 +157,7 @@ export class Connection {
                     message.state.status = EMessageStatus.DECLINED;
                   }
                 }
-                message.type = ERequestType.RESPONSE;
-                this.send(message);
+
               }
               break;
             case ERequestType.STREAM_START:
