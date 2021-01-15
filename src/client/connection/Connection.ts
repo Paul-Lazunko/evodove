@@ -115,7 +115,7 @@ export class Connection {
     for (let i = 0; i < dataStringGroup.length; i = i + 1) {
       if ( dataStringGroup[i] ) {
         try {
-          let decryptedData: string = this.rawDataString.length
+          const decryptedData: string = this.rawDataString.length
             ? CryptoHelper.decrypt(this.options.secureKey, this.rawDataString + dataStringGroup[i])
             : CryptoHelper.decrypt(this.options.secureKey, dataStringGroup[i]);
 
