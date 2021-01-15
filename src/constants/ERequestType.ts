@@ -1,6 +1,7 @@
 export enum ERequestType {
   ACCEPT ='accepted',
   STREAM_START ='streamStart',
+  STREAM_CANCEL='streamCancel',
   STREAM_END ='streamEnd',
   STREAM_CHUNK ='streamChunk',
   REQUEST ='request',
