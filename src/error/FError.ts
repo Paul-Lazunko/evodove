@@ -20,6 +20,10 @@ export class FError {
     return FError.construct(`Publish Error: subscribers for channel '${channel}' doesn't exist`)
   }
 
+  public static listenerExistenceError (channel: string) {
+    return FError.construct(`Stream Error: subscribers for stream '${channel}' don't exist`)
+  }
+
   public static paramsError (message: string) {
     return FError.construct(`Params Error: ${message}`)
   }
