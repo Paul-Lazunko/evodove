@@ -13,13 +13,15 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0",
+    "test": "EVODOVE_SECURE_KEY=test jest --forceExit --coverage --verbose --runInBand --detectOpenHandles",
     "build": "tsc",
     "tslint": "tslint src/**/*.ts{,x}"
   },
   "devDependencies": {
     "@types/joi": "^14.3.4",
     "@types/node": "^14.6.0",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4",
     "ts-node": "^5.0.0",
     "tslint": "^5.9.1",
     "tslint-config-airbnb": "^5.11.1",
