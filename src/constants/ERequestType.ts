@@ -8,6 +8,8 @@ export enum ERequestType {
   PUBLISH ='publish',
   RESPONSE = 'response',
   SUBSCRIBE = 'subscribe',
+  UNSUBSCRIBE = 'unsubscribe',
   LISTEN = 'listen',
+  DONT_LISTEN = 'dontListen',
   SETUP = 'setup'
 }
