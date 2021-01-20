@@ -60,18 +60,24 @@ const subscriber = new EvodoveClient({
   requestTimeout: 10000
 });
 
-subscriber.subscribe('foo', (data) => {
-  console.log({ data });
-});
+subscriber
+  .subscribe('foo', (data) => {
+    console.log({ data });
+  })
+  .catch(e => console.log(e));
 
-subscriber.subscribe('bar', (data) => {
-  return { works: true  }
-});
+subscriber
+  .subscribe('bar', (data) => {
+    return { works: true  }
+  })
+  .catch(e => console.log(e));
 
-subscriber.onStream('stream', (stream, meta) => {
-  // do something with stream and meta
-});
 
+subscriber
+  .onStream('stream', (stream, meta) => {
+   // do something with stream and meta
+  })
+  .catch(e => console.log(e));
 
 subscriber.connect().catch(console.log);
 ```
@@ -124,10 +130,11 @@ Client has 8 methods that Your can use:
 Client can subscribes  to many channels and uses separated handler for it.
 - **publish** - to publish some date in some channel (takes 3 arguments: _channel_ (string), _data_ (any) that will be published and _options_ object);
 **Options** can has next properties: _type_ (EPublishType enum/string) - 'direct' or 'broadcast', _waitSubscriber_ (boolean) - that indicates to Message Broker to wait while one of subscribers will be connected, _ttl_ (positive integer) - ms value during that Message Broker will be waiting for subscribers to deliver message.
-- **request** - to make request and get response from subscriber side (takes 2 _arguments_: _channel_ and _data_) 
+- **request** - to make request and get response from subscriber side (takes 2 _arguments_: _channel_ and _data_)
 - **stream** - to transfer binary data between microservices - takes 3 arguments: _channel_ (string), _stream_ (Readable), _meta_ (configuration object)
 - **onStream** - to transfer binary data between microservices - takes 2 arguments: _channel_ (string), _handler_ (function that takes 2 arguments: _stream_ (Readable), _meta_ (configuration object) )
-
+- **unsubscribe** - unsubscribe from channel
+- **offStream** - unsubscribe from channel
 Note, that stream at the subscriber`s side will be available only when data transferring was finished. Real time streams transfer is only announced feature and will be available in the next versions
 
 So, as You can see, usage of this solution is very easy to use and can be helpful for developing microservices based systems written with Node.js
