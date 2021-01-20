@@ -1,4 +1,5 @@
 import { config } from '../config';
+let once: boolean = false;
 import {
   EMessageStatus,
   EPublishType,
@@ -98,11 +99,9 @@ export class Evodove {
 
   protected responseHandler(message: IMessage) {
     const timestamp: number =  new Date().getTime();
-
     if ([ ERequestType.STREAM_CHUNK,  ERequestType.STREAM_END, ERequestType.STREAM_CANCEL ].includes(message.type) ) {
       message.routing.publisherId = message.routing.subscriberId;
     }
-
     const isSent: boolean = this.server.makeResponse(message);
     if ( !isSent ) {
       switch (message.type) {
@@ -152,7 +151,9 @@ export class Evodove {
     if ( !this.subscribers.has(key) ) {
       this.subscribers.set(key, []);
     }
-    this.subscribers.get(key).push(id);
+    if ( !this.subscribers.get(key).includes(id) ) {
+      this.subscribers.get(key).push(id);
+    }
   }
 
   protected deleteSubscriber(id: string) {
@@ -166,11 +167,31 @@ export class Evodove {
     });
   }
 
-  protected setListener(key: string, id: string): void {
-    if ( !this.listeners.has(key) ) {
-      this.listeners.set(key, []);
+  protected delSubscriber(channel: string, id: string) {
+    if ( this.subscribers.has(channel) ) {
+      const subscribers: string[] = this.subscribers.get(channel)
+      if ( subscribers.includes(id) ) {
+        subscribers.splice(subscribers.indexOf(id), 1);
+      }
     }
-    this.listeners.get(key).push(id);
+  }
+
+  protected setListener(channel: string, id: string): void {
+    if ( !this.listeners.has(channel) ) {
+      this.listeners.set(channel, []);
+    }
+    if ( !this.listeners.get(channel).includes(id) ) {
+      this.listeners.get(channel).push(id);
+    }
+  }
+
+  protected delListener(channel: string, id: string): void {
+    if ( this.listeners.has(channel) ) {
+      const listeners: string[] = this.listeners.get(channel);
+      if ( listeners.includes(channel) ) {
+        listeners.splice(listeners.indexOf(id),1)
+      }
+    }
   }
 
   protected deleteListener(id: string) {
@@ -195,11 +216,12 @@ export class Evodove {
 
   protected sendAck(message: IMessage) {
     const timestamp: number = new Date().getTime();
-    message.state.enqueuedAt = timestamp;
-    message.state.deliveredAt = timestamp;
-    message.state.handledAt = timestamp;
-    message.type = ERequestType.ACCEPT;
-    this.enQueueResponse(message);
+    const m: IMessage = Object.assign({}, message);
+    m.state.enqueuedAt = timestamp;
+    m.state.deliveredAt = timestamp;
+    m.state.handledAt = timestamp;
+    m.type = ERequestType.ACCEPT;
+    this.enQueueResponse(m);
   }
 
   protected getStreamHandler(socket: string, routing: IMessageRouting, type: EStreamHandlerType) {
@@ -262,28 +284,31 @@ export class Evodove {
           );
           break;
         case ERequestType.PUBLISH:
-          if ( !subscribersSockets || !subscribersSockets.length ) {
-           if ( options.waitSubscribers ) {
-             const ttl = options.ttl || 0;
-             if ( message.state.receivedAt + ttl > timestamp ) {
-               this.enQueueRequest(message);
-             }
-           } else {
-             throw FError.subscriberExistenceError(channel);
-           }
-          }
-          if ( options.type === EPublishType.BROADCAST ) {
-            this.server.makeRequest(subscribersSockets, message);
+          if ( !Array.isArray(subscribersSockets) || !subscribersSockets.length ) {
+            if ( options.waitSubscribers ) {
+              const ttl = options.ttl || 0;
+              if ( message.state.receivedAt + ttl > timestamp ) {
+                if ( !once ) {
+                  once = true;
+                }
+                this.enQueueRequest(message);
+              }
+            } else {
+              throw FError.subscriberExistenceError(channel);
+            }
           } else {
-            message.state.enqueuedAt = timestamp;
-            this.messageBuffer.set(id, message);
-            const index: number = Math.round(Math.random() * (subscribersSockets.length - 1));
-            const socket = subscribersSockets [ index ];
-            this.server.makeRequest(
-              [ socket ],
-              message,
-              this.enQueueRequest.bind(this)
-            );
+            if ( options.type === EPublishType.BROADCAST ) {
+              this.server.makeRequest(subscribersSockets, message);
+            } else {
+              message.state.enqueuedAt = timestamp;
+              const index: number = Math.round(Math.random() * (subscribersSockets.length - 1));
+              const socket = subscribersSockets [ index ];
+              this.server.makeRequest(
+                [ socket ],
+                message,
+                this.enQueueRequest.bind(this)
+              );
+            }
           }
           this.sendAck(message);
           break;
@@ -303,8 +328,16 @@ export class Evodove {
           this.setSubscriber(channel, publisherId);
           this.sendAck(message);
           break;
+        case ERequestType.UNSUBSCRIBE:
+          this.delSubscriber(channel, publisherId);
+          this.sendAck(message);
+          break;
         case ERequestType.LISTEN:
           this.setListener(channel, publisherId);
+          this.sendAck(message);
+          break;
+        case ERequestType.DONT_LISTEN:
+          this.delListener(channel, publisherId);
           this.sendAck(message);
           break;
         case ERequestType.STREAM_START:
@@ -400,9 +433,9 @@ export class Evodove {
   }
 
   protected initStore() {
-   addStoreHandler(STORE_MESSAGE_BUFFER_KEY, this.getMessageBufferObject.bind(this));
-   addStoreHandler(STORE_REQUEST_QUEUES_KEY, this.getRequestQueues.bind(this));
-   addStoreHandler(STORE_RESPONSE_QUEUES_KEY, this.getResponseQueues.bind(this));
+    addStoreHandler(STORE_MESSAGE_BUFFER_KEY, this.getMessageBufferObject.bind(this));
+    addStoreHandler(STORE_REQUEST_QUEUES_KEY, this.getRequestQueues.bind(this));
+    addStoreHandler(STORE_RESPONSE_QUEUES_KEY, this.getResponseQueues.bind(this));
   }
 
   protected getMessageBufferObject(): { [key: string]: IMessage } {

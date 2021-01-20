@@ -1,9 +1,9 @@
 import { createServer, Server, Socket } from 'net';
 import { config } from '../config';
-import { EMessageStatus, ERequestType } from '../constants';
+import { EMessageStatus } from '../constants';
 import { CryptoHelper, randomString } from '../helpers';
 import { IServerOptions } from '../options';
-import { IMessage } from '../structures';
+import { IMessage, IMessageState } from '../structures';
 
 export class EvodoveServer {
   private server: Server;
@@ -55,7 +55,9 @@ export class EvodoveServer {
           const message: IMessage = JSON.parse(decryptedData);
           isCorrectSecureKey = true;
           message.routing.publisherId = id;
-          message.state = message.state || { status: EMessageStatus.ACCEPTED, receivedAt: new Date().getTime()};
+          message.state = message.state || {} as IMessageState;
+          message.state.receivedAt = new Date().getTime();
+          message.state.status = EMessageStatus.ACCEPTED;
           savedPreviousStringData = '';
           this.requestHandler(message);
         } catch(e) {
@@ -106,20 +108,23 @@ export class EvodoveServer {
 
   public makeRequest(sockets: string[], message: IMessage, errorCallback?: (message: IMessage) => void) {
     const request: string = CryptoHelper.encrypt(config.secureKey, JSON.stringify(message));
-    sockets.forEach((socket: string) => {
-      const _socket: Socket = this.sockets.get(socket);
-      if ( _socket ) {
-        try {
-          _socket.write(request + '\n');
-        } catch (error) {
-          _socket.end();
-          if ( errorCallback ) {
-            errorCallback(message);
+    if ( Array.isArray(sockets) && sockets.length ) {
+      sockets.forEach((socket: string) => {
+        const _socket: Socket = this.sockets.get(socket);
+        if ( _socket ) {
+          try {
+            _socket.write(request + '\n');
+          } catch (error) {
+            _socket.end();
+            if ( errorCallback ) {
+              errorCallback(message);
+            }
           }
         }
-      }
-    })
-
+      });
+    } else {
+      errorCallback(message);
+    }
   }
 
 }
