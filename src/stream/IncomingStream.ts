@@ -36,7 +36,7 @@ export class IncomingStream extends stream.Duplex implements IRestorableStream<I
   }
 
   protected compareNumberedChunks(a: INumberedChunk, b: INumberedChunk) {
-    return Math.sign(a.index - b.index);
+    return Math.sign(b.index - a.index);
   }
 
   restore() {
