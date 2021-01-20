@@ -6,7 +6,8 @@ const channel = joi.string().required();
 const inputParams = joi.any();
 const messageOptions = joi.object({
   type: joi.string().valid(...Object.values(EPublishType)),
-  ttl: joi.number().positive().integer().min(1000)
+  ttl: joi.number().positive().integer().min(1000),
+  waitSubscribers: joi.boolean()
 });
 const handler = joi.function().required();
 
