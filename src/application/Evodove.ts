@@ -341,6 +341,9 @@ export class Evodove {
           this.sendAck(message);
           break;
         case ERequestType.STREAM_START:
+          if ( !Array.isArray(listenersSockets) || !listenersSockets.length ) {
+            throw FError.listenerExistenceError(channel);
+          }
           this.streams.set(streamId, new Map<string, IntermediateStream>());
           this.streamListeners.set(streamId, listenersSockets);
           const streams = this.streams.get(streamId);
