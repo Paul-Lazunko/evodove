@@ -4,7 +4,7 @@ import { EMessageStatus, ERequestType } from '../../constants';
 import { CryptoHelper } from '../../helpers';
 import { IClientConnectionOptions } from '../../options/IClientConnectionOptions';
 import { IncomingStream } from '../../stream';
-import { IMessage, INumberedChunk } from '../../structures';
+import { IMessage } from '../../structures';
 import { FMessage } from '../factory';
 
 export class Connection {
@@ -44,19 +44,17 @@ export class Connection {
     });
     this.eventEmitter.addListener('afterConnect', async () => {
       this.options.subscribers.forEach( (subscriber: any, channel: string) => {
-        const message: IMessage = FMessage.construct({ channel, type: ERequestType.SUBSCRIBE });
-        self.send(message).catch(console.log)
+        self.subscribe(channel);
       });
       this.options.listeners.forEach( (listeners: any, channel: string) => {
-        const message: IMessage = FMessage.construct({ channel, type: ERequestType.LISTEN });
-        self.send(message).catch(console.log)
+        self.onStream(channel);
       });
       await this.setup();
       while(this.enqueuedMessages.length) {
         const message = this.enqueuedMessages.shift();
         this.write(message);
       }
-    })
+    });
   }
 
   protected setSocket() {
@@ -102,6 +100,26 @@ export class Connection {
     this.socket.destroy();
   }
 
+  public async subscribe(channel: string): Promise<void> {
+    const message: IMessage = FMessage.construct({ channel, type: ERequestType.SUBSCRIBE });
+    await this.send(message);
+  }
+
+  public async unsubscribe(channel: string): Promise<void> {
+    const message: IMessage = FMessage.construct({ channel, type: ERequestType.UNSUBSCRIBE });
+    await this.send(message);
+  }
+
+  public async onStream(channel: string): Promise<void> {
+    const message: IMessage = FMessage.construct({ channel, type: ERequestType.LISTEN });
+    await this.send(message);
+  }
+
+  public async offStream(channel: string): Promise<void> {
+    const message: IMessage = FMessage.construct({ channel, type: ERequestType.DONT_LISTEN });
+    await this.send(message);
+  }
+
   private  async onData(data: string): Promise<void> {
     let message: IMessage;
     const dataString: string = data.toString();
@@ -122,7 +140,6 @@ export class Connection {
           message = JSON.parse(decryptedData);
           const { type, routing, state, inputParams, options } = message;
           const handler = this.options.subscribers.get(routing.channel);
-
           const hasError: boolean = state && state.hasOwnProperty('error');
           if ( hasError ) {
             this.eventEmitter.emit(`error-${routing.id}`, state.error);
@@ -146,7 +163,7 @@ export class Connection {
                     message.type = ERequestType.RESPONSE;
                     await this.send(message);
                   } else {
-                    await handler(inputParams)
+                    await handler(inputParams);
                   }
                   if ( message.state ) {
                     message.state.handledAt = new Date().getTime();
@@ -157,7 +174,6 @@ export class Connection {
                     message.state.status = EMessageStatus.DECLINED;
                   }
                 }
-
               }
               break;
             case ERequestType.STREAM_START:

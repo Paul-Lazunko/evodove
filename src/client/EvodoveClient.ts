@@ -49,16 +49,28 @@ export class EvodoveClient {
     return this.connection.disconnect();
   }
 
-  public subscribe(channel: string, handler: (outputParams: any) => any ): void {
+  public subscribe(channel: string, handler: (outputParams: any) => any ): Promise<void> {
     Validator.validateChannel(channel);
     Validator.validateHandler(handler);
     this.subscribers.set(channel, handler);
+    return this.connection.subscribe(channel)
   }
 
-  public onStream(channel: string, handler: (stream: Readable, meta: { [key: string]: any }) => any ): void {
+  public unsubscribe(channel: string): Promise<void> {
+    Validator.validateChannel(channel);
+    return this.connection.unsubscribe(channel)
+  }
+
+  public offStream(channel: string): Promise<void> {
+    Validator.validateChannel(channel);
+    return this.connection.offStream(channel);
+  }
+
+  public onStream(channel: string, handler: (stream: Readable, meta: { [key: string]: any }) => any ): Promise<void> {
     Validator.validateChannel(channel);
     Validator.validateHandler(handler);
     this.listeners.set(channel, handler);
+    return this.connection.onStream(channel)
   }
 
   public publish(channel: string, inputParams: any, options?: IMessageOptions): Promise<any> {
