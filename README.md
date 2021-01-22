@@ -1,10 +1,10 @@
 # evodove
 
 Evodove is a Message Broker for Node.js applications. It provides next advantages to Your projects:
-- security - clients and server interact with encrypted frames only without keys sharing and can do it over the global network without fear of data leakage
-- velocity - message delivering takes few (1-3) ms with delivering guarantee
-- stability - server/clients are resistant to crashes and loosing connection
-- flexible - the number of restrictions is minimal and this solution easily fits into any architecture
+- **security** - clients and server interact with encrypted frames only without keys sharing and can do it over the global network without fear of data leakage
+- **performance** - message delivering takes few (1-3) ms with delivering guarantee
+- **stability** - server/clients are resistant to crashes and loosing connection
+- **flexible** - the number of restrictions is minimal and this solution easily fits into any architecture
 
 ***
 
@@ -96,7 +96,7 @@ So, created clients in the same time can be publishers and subscribers.
 Their can be used in the same or different applications, can subscribe to many channels etc - up to your system design and requirements.
 It`s really simple and flexible!
 
-###### 3. Subscribing
+###### 3. Subscribing process
 
 The client can subscribe to some channel (or key, it`s just simple unique string). It also cans unsubscribe from the channel.
 When some data will be passed from one of the publishers to the channel, it will take the data and execute provided handler.
