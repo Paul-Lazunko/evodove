@@ -98,7 +98,7 @@ It`s really simple and flexible!
 
 ###### 3. Subscribing process
 
-The client can subscribe to some channel (or key, it`s just simple unique string). It also cans unsubscribe from the channel.
+The client can subscribe to some channel (or key, it`s just simple unique string). It can unsubscribe from the channel also.
 When some data will be passed from one of the publishers to the channel, it will take the data and execute provided handler.
 See the next example:
 
